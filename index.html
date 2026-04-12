@@ -18,14 +18,7 @@
   }
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { font-family: var(--font-body); background: var(--paper); color: var(--charcoal); overflow-x: hidden; cursor: none; }
-
-  /* CURSOR */
-  .cursor { position: fixed; z-index: 9999; width: 10px; height: 10px; background: var(--charcoal); border-radius: 50%; pointer-events: none; transition: transform 0.15s ease, background 0.2s; transform: translate(-50%,-50%); }
-  .cursor-ring { position: fixed; z-index: 9998; width: 36px; height: 36px; border: 1px solid var(--charcoal); border-radius: 50%; pointer-events: none; transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.2s; transform: translate(-50%,-50%); opacity: 0.5; }
-  .cursor-ring.hovered { transform: translate(-50%,-50%) scale(2); opacity: 0.3; }
-  body.dark-section .cursor { background: var(--cream); }
-  body.dark-section .cursor-ring { border-color: var(--cream); }
+  body { font-family: var(--font-body); background: var(--paper); color: var(--charcoal); overflow-x: hidden; cursor: auto; }
 
   /* NAV */
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 28px 60px; transition: padding 0.4s, background 0.4s, backdrop-filter 0.4s; }
@@ -35,7 +28,11 @@
   .nav-links a { font-family: var(--font-label); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--charcoal); text-decoration: none; position: relative; transition: color 0.2s; }
   .nav-links a::after { content: ''; position: absolute; bottom: -3px; left: 0; width: 0; height: 1px; background: var(--gold); transition: width 0.3s; }
   .nav-links a:hover::after { width: 100%; }
-  .nav-cta { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 11px 26px; border: none; cursor: none; transition: background 0.25s; text-decoration: none; }
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+  .lang-switch { display: inline-flex; border: 1px solid var(--line); }
+  .lang-btn { font-family: var(--font-label); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; background: transparent; color: var(--charcoal); border: none; padding: 8px 10px; cursor: pointer; }
+  .lang-btn.active { background: var(--charcoal); color: var(--paper); }
+  .nav-cta { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 11px 26px; border: none; cursor: pointer; transition: background 0.25s; text-decoration: none; }
   .nav-cta:hover { background: var(--gold); }
 
   /* HERO */
@@ -72,7 +69,7 @@
   /* SHARED */
   .section-tag { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
   .section-tag::before { content: ''; display: block; width: 30px; height: 1px; background: var(--gold); }
-  .btn-primary { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--charcoal); text-decoration: none; padding-bottom: 6px; border-bottom: 1px solid var(--charcoal); transition: color 0.2s, border-color 0.2s; cursor: none; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--charcoal); text-decoration: none; padding-bottom: 6px; border-bottom: 1px solid var(--charcoal); transition: color 0.2s, border-color 0.2s; cursor: pointer; }
   .btn-primary:hover { color: var(--gold); border-color: var(--gold); }
   .btn-primary svg { transition: transform 0.3s; }
   .btn-primary:hover svg { transform: translateX(6px); }
@@ -105,11 +102,11 @@
   .catalog-header .section-tag { color: var(--gold); }
   .catalog-header .section-tag::before { background: var(--gold); }
   .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 48px; }
-  .filter-tab { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(244,240,232,0.5); background: rgba(244,240,232,0.06); border: 1px solid rgba(244,240,232,0.1); padding: 10px 22px; cursor: none; transition: all 0.2s; }
+  .filter-tab { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(244,240,232,0.5); background: rgba(244,240,232,0.06); border: 1px solid rgba(244,240,232,0.1); padding: 10px 22px; cursor: pointer; transition: all 0.2s; }
   .filter-tab:hover { color: var(--cream); background: rgba(244,240,232,0.1); }
   .filter-tab.active { color: var(--charcoal); background: var(--gold); border-color: var(--gold); }
   .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
-  .product-card { background: rgba(244,240,232,0.04); border: 1px solid rgba(244,240,232,0.08); display: flex; flex-direction: column; transition: background 0.2s, border-color 0.2s; cursor: none; }
+  .product-card { background: rgba(244,240,232,0.04); border: 1px solid rgba(244,240,232,0.08); display: flex; flex-direction: column; transition: background 0.2s, border-color 0.2s; cursor: pointer; }
   .product-card:hover { background: rgba(244,240,232,0.08); border-color: rgba(184,147,90,0.4); }
   .card-icon-tile { background: rgba(18,18,16,0.6); padding: 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(244,240,232,0.06); }
   .card-icon-tile svg { width: 32px; height: 32px; opacity: 0.4; color: var(--gold-light); }
@@ -118,7 +115,7 @@
   .card-name { font-family: var(--font-display); font-size: 20px; font-weight: 400; color: var(--cream); margin-bottom: 10px; line-height: 1.2; }
   .card-desc { font-size: 13px; font-weight: 300; line-height: 1.6; color: rgba(244,240,232,0.5); }
   .card-footer { padding: 20px 28px 24px; }
-  .btn-card { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); background: none; border: none; cursor: none; display: inline-flex; align-items: center; gap: 10px; transition: color 0.2s; padding: 0; }
+  .btn-card { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: color 0.2s; padding: 0; }
   .btn-card:hover { color: var(--gold-light); }
   .btn-card svg { transition: transform 0.3s; }
   .btn-card:hover svg { transform: translateX(5px); }
@@ -130,7 +127,7 @@
   .modal-top { padding: 40px 48px 32px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
   .modal-sku { font-family: var(--font-label); font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
   .modal-name { font-family: var(--font-display); font-size: 32px; font-weight: 300; line-height: 1.1; color: var(--charcoal); }
-  .modal-close { background: none; border: none; cursor: none; color: var(--mid); font-size: 24px; line-height: 1; padding: 4px; transition: color 0.2s; flex-shrink: 0; }
+  .modal-close { background: none; border: none; cursor: pointer; color: var(--mid); font-size: 24px; line-height: 1; padding: 4px; transition: color 0.2s; flex-shrink: 0; }
   .modal-close:hover { color: var(--charcoal); }
   .modal-body { padding: 32px 48px 40px; }
   .spec-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
@@ -140,7 +137,7 @@
   .spec-notes { list-style: none; margin-bottom: 32px; }
   .spec-notes li { font-size: 14px; font-weight: 300; color: var(--mid); line-height: 1.6; padding-left: 16px; position: relative; margin-bottom: 6px; }
   .spec-notes li::before { content: '\2014'; position: absolute; left: 0; color: var(--gold); }
-  .btn-modal-cta { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 14px 32px; border: none; cursor: none; transition: background 0.25s; }
+  .btn-modal-cta { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 14px 32px; border: none; cursor: pointer; transition: background 0.25s; }
   .btn-modal-cta:hover { background: var(--gold); }
 
   /* CONTACT */
@@ -161,7 +158,7 @@
   .form-group input, .form-group textarea { font-family: var(--font-body); font-size: 14px; font-weight: 300; color: var(--charcoal); background: none; border: none; border-bottom: 1px solid var(--line); padding: 12px 0; outline: none; transition: border-color 0.2s; resize: none; }
   .form-group input:focus, .form-group textarea:focus { border-color: var(--gold); }
   .form-group textarea { min-height: 120px; }
-  .btn-submit { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 14px 32px; border: none; cursor: none; transition: background 0.25s; margin-top: 8px; display: inline-flex; align-items: center; gap: 12px; }
+  .btn-submit { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 14px 32px; border: none; cursor: pointer; transition: background 0.25s; margin-top: 8px; display: inline-flex; align-items: center; gap: 12px; }
   .btn-submit:hover { background: var(--gold); }
   .form-success { display: none; font-family: var(--font-display); font-size: 28px; font-weight: 300; color: var(--charcoal); line-height: 1.4; }
   .form-success em { font-style: italic; color: var(--gold); }
@@ -183,27 +180,31 @@
 </head>
 <body>
 
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursorRing"></div>
 
 <nav id="mainNav">
   <a href="#" class="nav-logo">SmartPass</a>
   <ul class="nav-links">
-    <li><a href="#about">About</a></li>
-    <li><a href="#catalog">Catalog</a></li>
-    <li><a href="#contact">Contact</a></li>
+    <li><a href="#about" data-i18n="nav.about">About</a></li>
+    <li><a href="#catalog" data-i18n="nav.catalog">Catalog</a></li>
+    <li><a href="#contact" data-i18n="nav.contact">Contact</a></li>
   </ul>
-  <a href="#contact" class="nav-cta">Request Quote</a>
+  <div class="nav-right">
+    <div class="lang-switch" aria-label="Language switcher">
+      <button class="lang-btn active" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="sv">SV</button>
+    </div>
+    <a href="#contact" class="nav-cta" data-i18n="nav.request">Request Quote</a>
+  </div>
 </nav>
 
 <section class="hero" id="hero">
   <div class="hero-bg" id="heroBg"></div>
   <div class="hero-noise"></div>
-  <div class="hero-label">Door Automation Specialists &mdash; Sweden</div>
-  <h1 class="hero-title">Precision door<br><em>automation</em><br>parts.</h1>
+  <div class="hero-label" data-i18n="hero.label">Door Automation Specialists &mdash; Sweden</div>
+  <h1 class="hero-title" data-i18n-html="hero.title">Precision door<br><em>automation</em><br>parts.</h1>
   <div class="hero-bottom">
-    <p class="hero-desc">Professional-grade accessories for automatic door systems. Sensors, controls, access systems and hardware &mdash; delivered across Sweden.</p>
-    <div class="hero-scroll"><div class="scroll-line"></div><span>Scroll</span></div>
+    <p class="hero-desc" data-i18n="hero.desc">Professional-grade accessories for automatic door systems. Sensors, controls, access systems and hardware &mdash; delivered across Sweden.</p>
+    <div class="hero-scroll"><div class="scroll-line"></div><span data-i18n="hero.scroll">Scroll</span></div>
   </div>
 </section>
 
@@ -216,15 +217,15 @@
 <section class="about" id="about">
   <div class="about-left reveal-left">
     <div class="about-number">01</div>
-    <div class="section-tag">About SmartPass</div>
-    <h2>The right part,<br><em>every time</em></h2>
-    <p class="about-text">SmartPass is a Swedish supplier of professional automatic door accessories. We stock sensors, switches, access control systems, locks, and hardware components for professional installers, property managers, and building companies across Sweden.</p>
+    <div class="section-tag" data-i18n="about.tag">About SmartPass</div>
+    <h2 data-i18n-html="about.title">The right part,<br><em>every time</em></h2>
+    <p class="about-text" data-i18n="about.text">SmartPass is a Swedish supplier of professional automatic door accessories. We stock sensors, switches, access control systems, locks, and hardware components for professional installers, property managers, and building companies across Sweden.</p>
     <div class="about-stats">
-      <div><div class="about-stat-value">45+</div><div class="about-stat-label">Products</div></div>
-      <div><div class="about-stat-value">CE</div><div class="about-stat-label">Certified</div></div>
-      <div><div class="about-stat-value">SE</div><div class="about-stat-label">Delivery</div></div>
+      <div><div class="about-stat-value">45+</div><div class="about-stat-label" data-i18n="about.products">Products</div></div>
+      <div><div class="about-stat-value">CE</div><div class="about-stat-label" data-i18n="about.certified">Certified</div></div>
+      <div><div class="about-stat-value">SE</div><div class="about-stat-label" data-i18n="about.delivery">Delivery</div></div>
     </div>
-    <a href="#catalog" class="btn-primary">Browse catalog <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></a>
+    <a href="#catalog" class="btn-primary"><span data-i18n="about.browse">Browse catalog</span> <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></a>
   </div>
   <div class="about-right reveal-right">
     <div class="about-main-img"><img src="5.jpg" alt="SmartPass door operator" loading="lazy"></div>
@@ -240,16 +241,16 @@
 
 <section class="catalog" id="catalog">
   <div class="catalog-header reveal">
-    <div class="section-tag">Product Catalog</div>
-    <h2>Browse our<br><em>full range</em></h2>
+    <div class="section-tag" data-i18n="catalog.tag">Product Catalog</div>
+    <h2 data-i18n-html="catalog.title">Browse our<br><em>full range</em></h2>
   </div>
   <div class="filter-tabs" id="filterTabs">
-    <button class="filter-tab active" data-filter="all">All</button>
-    <button class="filter-tab" data-filter="sensors">Sensors</button>
-    <button class="filter-tab" data-filter="switches">Switches &amp; Controls</button>
-    <button class="filter-tab" data-filter="access">Access Control</button>
-    <button class="filter-tab" data-filter="locks">Locks</button>
-    <button class="filter-tab" data-filter="hardware">Hardware</button>
+    <button class="filter-tab active" data-filter="all" data-i18n="filters.all">All</button>
+    <button class="filter-tab" data-filter="sensors" data-i18n="filters.sensors">Sensors</button>
+    <button class="filter-tab" data-filter="switches" data-i18n="filters.switches">Switches &amp; Controls</button>
+    <button class="filter-tab" data-filter="access" data-i18n="filters.access">Access Control</button>
+    <button class="filter-tab" data-filter="locks" data-i18n="filters.locks">Locks</button>
+    <button class="filter-tab" data-filter="hardware" data-i18n="filters.hardware">Hardware</button>
   </div>
   <div class="product-grid" id="productGrid"></div>
 </section>
@@ -263,7 +264,7 @@
     <div class="modal-body">
       <table class="spec-table" id="specTable"></table>
       <ul class="spec-notes" id="specNotes"></ul>
-      <button class="btn-modal-cta" id="modalCta">Request Quote <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      <button class="btn-modal-cta" id="modalCta"><span data-i18n="nav.request">Request Quote</span> <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
     </div>
   </div>
 </div>
@@ -271,9 +272,9 @@
 <section class="contact" id="contact">
   <div class="contact-inner">
     <div class="contact-left reveal-left">
-      <div class="section-tag">Get in Touch</div>
-      <h2>Request a quote or<br><em>ask a question</em></h2>
-      <p>Send us your enquiry and we will get back to you promptly with product availability, specifications, and pricing.</p>
+      <div class="section-tag" data-i18n="contact.tag">Get in Touch</div>
+      <h2 data-i18n-html="contact.title">Request a quote or<br><em>ask a question</em></h2>
+      <p data-i18n="contact.text">Send us your enquiry and we will get back to you promptly with product availability, specifications, and pricing.</p>
       <div class="contact-details">
         <div class="contact-detail">
           <svg class="contact-detail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="1"/><path d="M2 4l8 7 8-7"/></svg>
@@ -292,16 +293,16 @@
     <div class="reveal-right">
       <form id="contactForm" novalidate>
         <div class="form-grid">
-          <div class="form-group"><label for="fieldName">Full Name *</label><input type="text" id="fieldName" name="name" required placeholder="Jan Svensson"></div>
-          <div class="form-group"><label for="fieldCompany">Company</label><input type="text" id="fieldCompany" name="company" placeholder="Svensson Bygg AB"></div>
-          <div class="form-group"><label for="fieldEmail">Email *</label><input type="email" id="fieldEmail" name="email" required placeholder="jan@example.se"></div>
-          <div class="form-group"><label for="fieldPhone">Phone</label><input type="tel" id="fieldPhone" name="phone" placeholder="+46 70 000 00 00"></div>
-          <div class="form-group full"><label for="productInterest">Product of Interest</label><input type="text" id="productInterest" name="product" placeholder="e.g. MS01 Microwave Sensor"></div>
-          <div class="form-group full"><label for="fieldMessage">Message *</label><textarea id="fieldMessage" name="message" required placeholder="Tell us about your project or ask a question..."></textarea></div>
+          <div class="form-group"><label for="fieldName" data-i18n="form.name">Full Name *</label><input type="text" id="fieldName" name="name" required placeholder="Jan Svensson"></div>
+          <div class="form-group"><label for="fieldCompany" data-i18n="form.company">Company</label><input type="text" id="fieldCompany" name="company" placeholder="Svensson Bygg AB"></div>
+          <div class="form-group"><label for="fieldEmail" data-i18n="form.email">Email *</label><input type="email" id="fieldEmail" name="email" required placeholder="jan@example.se"></div>
+          <div class="form-group"><label for="fieldPhone" data-i18n="form.phone">Phone</label><input type="tel" id="fieldPhone" name="phone" placeholder="+46 70 000 00 00"></div>
+          <div class="form-group full"><label for="productInterest" data-i18n="form.product">Product of Interest</label><input type="text" id="productInterest" name="product" placeholder="e.g. MS01 Microwave Sensor"></div>
+          <div class="form-group full"><label for="fieldMessage" data-i18n="form.message">Message *</label><textarea id="fieldMessage" name="message" required placeholder="Tell us about your project or ask a question..."></textarea></div>
         </div>
-        <button type="submit" class="btn-submit">Send Request <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+        <button type="submit" class="btn-submit"><span data-i18n="form.submit">Send Request</span> <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
       </form>
-      <div class="form-success" id="formSuccess">Thank you &mdash;<br>we will be in <em>touch</em> shortly.</div>
+      <div class="form-success" id="formSuccess" data-i18n-html="form.success">Thank you &mdash;<br>we will be in <em>touch</em> shortly.</div>
     </div>
   </div>
 </section>
@@ -465,22 +466,6 @@ document.getElementById('contactForm').addEventListener('submit', function(e) {
   document.getElementById('formSuccess').style.display = 'block';
 });
 
-var cursor = document.getElementById('cursor');
-var ring = document.getElementById('cursorRing');
-var mx = 0, my = 0, rx = 0, ry = 0;
-document.addEventListener('mousemove', function(e){ mx = e.clientX; my = e.clientY; });
-function animateCursor() {
-  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
-  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
-  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
-  requestAnimationFrame(animateCursor);
-}
-animateCursor();
-document.querySelectorAll('a, button, .product-card, .filter-tab').forEach(function(el) {
-  el.addEventListener('mouseenter', function(){ ring.classList.add('hovered'); });
-  el.addEventListener('mouseleave', function(){ ring.classList.remove('hovered'); });
-});
-
 var nav = document.getElementById('mainNav');
 window.addEventListener('scroll', function(){ nav.classList.toggle('scrolled', window.scrollY > 60); });
 window.addEventListener('load', function(){ document.getElementById('heroBg').classList.add('loaded'); });
@@ -497,6 +482,46 @@ var sectionObserver = new IntersectionObserver(function(entries) {
   });
 }, { threshold: 0.1 });
 darkSections.forEach(function(s){ sectionObserver.observe(s); });
+
+
+var I18N = {
+  en: {
+    nav:{about:'About',catalog:'Catalog',contact:'Contact',request:'Request Quote'},
+    hero:{label:'Door Automation Specialists — Sweden',title:'Precision door<br><em>automation</em><br>parts.',desc:'Professional-grade accessories for automatic door systems. Sensors, controls, access systems and hardware — delivered across Sweden.',scroll:'Scroll'},
+    about:{tag:'About SmartPass',title:'The right part,<br><em>every time</em>',text:'SmartPass is a Swedish supplier of professional automatic door accessories. We stock sensors, switches, access control systems, locks, and hardware components for professional installers, property managers, and building companies across Sweden.',products:'Products',certified:'Certified',delivery:'Delivery',browse:'Browse catalog'},
+    catalog:{tag:'Product Catalog',title:'Browse our<br><em>full range</em>'},
+    filters:{all:'All',sensors:'Sensors',switches:'Switches & Controls',access:'Access Control',locks:'Locks',hardware:'Hardware'},
+    contact:{tag:'Get in Touch',title:'Request a quote or<br><em>ask a question</em>',text:'Send us your enquiry and we will get back to you promptly with product availability, specifications, and pricing.'},
+    form:{name:'Full Name *',company:'Company',email:'Email *',phone:'Phone',product:'Product of Interest',message:'Message *',submit:'Send Request',success:'Thank you —<br>we will be in <em>touch</em> shortly.'}
+  },
+  sv: {
+    nav:{about:'Om oss',catalog:'Katalog',contact:'Kontakt',request:'Begär offert'},
+    hero:{label:'Specialister på dörrautomation — Sverige',title:'Precision i<br><em>automatiska</em><br>dörrdelar.',desc:'Professionella tillbehör för automatiska dörrsystem. Sensorer, styrning, passersystem och beslag — levereras över hela Sverige.',scroll:'Skrolla'},
+    about:{tag:'Om SmartPass',title:'Rätt del,<br><em>varje gång</em>',text:'SmartPass är en svensk leverantör av professionella tillbehör för automatiska dörrar. Vi lagerför sensorer, styrning, passersystem, lås och beslag för installatörer, fastighetsförvaltare och byggföretag i hela Sverige.',products:'Produkter',certified:'Certifierad',delivery:'Leverans',browse:'Bläddra i katalog'},
+    catalog:{tag:'Produktkatalog',title:'Utforska vårt<br><em>hela sortiment</em>'},
+    filters:{all:'Alla',sensors:'Sensorer',switches:'Brytare & styrning',access:'Passerkontroll',locks:'Lås',hardware:'Beslag'},
+    contact:{tag:'Kontakta oss',title:'Begär offert eller<br><em>ställ en fråga</em>',text:'Skicka din förfrågan så återkommer vi snabbt med tillgänglighet, specifikationer och pris.'},
+    form:{name:'Namn *',company:'Företag',email:'E-post *',phone:'Telefon',product:'Produktintresse',message:'Meddelande *',submit:'Skicka förfrågan',success:'Tack —<br>vi hör av oss <em>snart</em>.'}
+  }
+};
+
+function t(path, lang){
+  return path.split('.').reduce(function(acc,key){ return acc && acc[key]; }, I18N[lang]) || path;
+}
+
+function setLanguage(lang){
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = t(el.dataset.i18n, lang); });
+  document.querySelectorAll('[data-i18n-html]').forEach(function(el){ el.innerHTML = t(el.dataset.i18nHtml, lang); });
+  document.querySelectorAll('.lang-btn').forEach(function(btn){ btn.classList.toggle('active', btn.dataset.lang === lang); });
+  localStorage.setItem('lang', lang);
+}
+
+document.querySelectorAll('.lang-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){ setLanguage(btn.dataset.lang); });
+});
+
+setLanguage(localStorage.getItem('lang') || 'en');
 
 renderCards('all');
 </script>
