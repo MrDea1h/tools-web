@@ -160,6 +160,10 @@
   .form-group textarea { min-height: 120px; }
   .btn-submit { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 14px 32px; border: none; cursor: pointer; transition: background 0.25s; margin-top: 8px; display: inline-flex; align-items: center; gap: 12px; }
   .btn-submit:hover { background: var(--gold); }
+  .btn-submit:disabled { opacity: 0.65; cursor: not-allowed; }
+  .form-feedback { margin-top: 18px; font-size: 14px; font-weight: 300; line-height: 1.6; display: none; }
+  .form-feedback.success { color: var(--charcoal); }
+  .form-feedback.error { color: #9c3f3f; }
   .form-success { display: none; font-family: var(--font-display); font-size: 28px; font-weight: 300; color: var(--charcoal); line-height: 1.4; }
   .form-success em { font-style: italic; color: var(--gold); }
 
@@ -300,7 +304,8 @@
           <div class="form-group full"><label for="productInterest" data-i18n="form.product">Product of Interest</label><input type="text" id="productInterest" name="product" placeholder="e.g. MS01 Microwave Sensor"></div>
           <div class="form-group full"><label for="fieldMessage" data-i18n="form.message">Message *</label><textarea id="fieldMessage" name="message" required placeholder="Tell us about your project or ask a question..."></textarea></div>
         </div>
-        <button type="submit" class="btn-submit"><span data-i18n="form.submit">Send Request</span> <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+        <button type="submit" class="btn-submit" id="contactSubmit"><span data-i18n="form.submit">Send Request</span> <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+        <div class="form-feedback" id="formFeedback" aria-live="polite"></div>
       </form>
       <div class="form-success" id="formSuccess" data-i18n-html="form.success">Thank you &mdash;<br>we will be in <em>touch</em> shortly.</div>
     </div>
@@ -460,10 +465,71 @@ document.getElementById('modalCta').addEventListener('click', function() {
   setTimeout(function(){ document.getElementById('fieldName').focus(); }, 600);
 });
 
-document.getElementById('contactForm').addEventListener('submit', function(e) {
+var contactForm = document.getElementById('contactForm');
+var contactSubmit = document.getElementById('contactSubmit');
+var formFeedback = document.getElementById('formFeedback');
+
+function setFormFeedback(type, text) {
+  formFeedback.className = 'form-feedback ' + type;
+  formFeedback.textContent = text;
+  formFeedback.style.display = 'block';
+}
+
+function clearFormFeedback() {
+  formFeedback.style.display = 'none';
+  formFeedback.textContent = '';
+  formFeedback.className = 'form-feedback';
+}
+
+contactForm.addEventListener('submit', async function(e) {
   e.preventDefault();
-  document.getElementById('contactForm').style.display = 'none';
-  document.getElementById('formSuccess').style.display = 'block';
+  clearFormFeedback();
+
+  var lang = (document.documentElement.lang || 'en').toLowerCase().startsWith('sv') ? 'sv' : 'en';
+  var submitText = contactSubmit.querySelector('[data-i18n="form.submit"]');
+  var payload = {
+    name: document.getElementById('fieldName').value.trim(),
+    company: document.getElementById('fieldCompany').value.trim(),
+    email: document.getElementById('fieldEmail').value.trim(),
+    phone: document.getElementById('fieldPhone').value.trim(),
+    product: document.getElementById('productInterest').value.trim(),
+    message: document.getElementById('fieldMessage').value.trim(),
+    lang: lang
+  };
+
+  contactSubmit.disabled = true;
+  if (submitText) submitText.textContent = t('form.sending', lang);
+
+  try {
+    var res = await fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      contactForm.style.display = 'none';
+      document.getElementById('formSuccess').style.display = 'block';
+      return;
+    }
+
+    if (res.status === 422) {
+      setFormFeedback('error', t('form.error422', lang));
+      return;
+    }
+
+    if (res.status === 429) {
+      setFormFeedback('error', t('form.error429', lang));
+      return;
+    }
+
+    setFormFeedback('error', t('form.errorGeneric', lang));
+  } catch (err) {
+    setFormFeedback('error', t('form.errorGeneric', lang));
+  } finally {
+    contactSubmit.disabled = false;
+    if (submitText) submitText.textContent = t('form.submit', lang);
+  }
 });
 
 var nav = document.getElementById('mainNav');
@@ -492,7 +558,7 @@ var I18N = {
     catalog:{tag:'Product Catalog',title:'Browse our<br><em>full range</em>'},
     filters:{all:'All',sensors:'Sensors',switches:'Switches & Controls',access:'Access Control',locks:'Locks',hardware:'Hardware'},
     contact:{tag:'Get in Touch',title:'Request a quote or<br><em>ask a question</em>',text:'Send us your enquiry and we will get back to you promptly with product availability, specifications, and pricing.'},
-    form:{name:'Full Name *',company:'Company',email:'Email *',phone:'Phone',product:'Product of Interest',message:'Message *',submit:'Send Request',success:'Thank you —<br>we will be in <em>touch</em> shortly.'}
+    form:{name:'Full Name *',company:'Company',email:'Email *',phone:'Phone',product:'Product of Interest',message:'Message *',submit:'Send Request',sending:'Sending...',success:'Thank you —<br>we will be in <em>touch</em> shortly.',error422:'Please check required fields and email format, then try again.',error429:'Too many requests right now. Please wait a moment and try again.',errorGeneric:'Something went wrong. Please try again shortly.'}
   },
   sv: {
     nav:{about:'Om oss',catalog:'Katalog',contact:'Kontakt',request:'Begär offert'},
@@ -501,7 +567,7 @@ var I18N = {
     catalog:{tag:'Produktkatalog',title:'Utforska vårt<br><em>hela sortiment</em>'},
     filters:{all:'Alla',sensors:'Sensorer',switches:'Brytare & styrning',access:'Passerkontroll',locks:'Lås',hardware:'Beslag'},
     contact:{tag:'Kontakta oss',title:'Begär offert eller<br><em>ställ en fråga</em>',text:'Skicka din förfrågan så återkommer vi snabbt med tillgänglighet, specifikationer och pris.'},
-    form:{name:'Namn *',company:'Företag',email:'E-post *',phone:'Telefon',product:'Produktintresse',message:'Meddelande *',submit:'Skicka förfrågan',success:'Tack —<br>vi hör av oss <em>snart</em>.'}
+    form:{name:'Namn *',company:'Företag',email:'E-post *',phone:'Telefon',product:'Produktintresse',message:'Meddelande *',submit:'Skicka förfrågan',sending:'Skickar...',success:'Tack —<br>vi hör av oss <em>snart</em>.',error422:'Kontrollera obligatoriska fält och e-postadress och försök igen.',error429:'För många förfrågningar just nu. Vänta en stund och försök igen.',errorGeneric:'Något gick fel. Försök igen om en liten stund.'}
   }
 };
 
