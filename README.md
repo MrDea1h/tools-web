@@ -24,6 +24,17 @@ Optional integration envs:
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_TO` - reserved for email adapter wiring. Current scaffold is intentionally a no-op.
 - `NOTIFIER_WEBHOOK_URL` - optional fallback notification hook, called when an adapter reports a delivery failure.
 
+Security envs (Track 3 baseline):
+- `TRUST_PROXY` - optional (`true/false`). Enable in production when running behind reverse proxies/load balancers so Express uses forwarded headers safely.
+- `CORS_ALLOWLIST` - comma-separated origin allowlist for `/api/*`. In local dev, if empty, localhost origins are allowed by default.
+- `CAPTCHA_PROVIDER` - optional: `turnstile`, `recaptcha`, or `hcaptcha`.
+- `CAPTCHA_VERIFY_URL` - optional override for provider verify endpoint.
+- `CAPTCHA_SECRET` - shared secret for captcha verification.
+- `CAPTCHA_TOKEN_FIELD` - request body field for token (default: `captcha_token`).
+- `CAPTCHA_FAIL_OPEN` - if `true`, allows lead submission when captcha verification errors/fails.
+- `CAPTCHA_REQUIRED_IN_PROD` - if `true` (default), production requires captcha (or blocks when not configured and fail-open is false).
+- `CAPTCHA_MIN_SCORE` - optional numeric threshold for score-based providers.
+
 Backend reads `.env` automatically via `dotenv`. If `.env` is missing, backend still starts with local defaults and skips optional adapters.
 
 ## 3) Run backend (API)
@@ -72,6 +83,11 @@ curl -X POST http://localhost:8787/api/lead \
 - `source_url` (optional)
 - `lang` (optional)
 - `schema_version` (optional; defaults to `"1.0"` if omitted)
+- `idempotency_key` (optional; client-provided dedup key)
+
+Optional request header:
+- `Idempotency-Key` (optional; takes precedence over payload `idempotency_key`)
+- `captcha_token` (optional by default; required when captcha enforcement is enabled in env)
 
 Example payload:
 ```json
@@ -92,6 +108,23 @@ Example payload:
 Lifecycle note:
 - Backend trims/sanitizes text fields, enforces per-field max length, validates required fields (`name`, `email`) and email format, and performs soft phone validation.
 - `schema_version` is persisted with each lead. If not sent, backend stores `"1.0"` and returns it in API response.
+- Idempotency/dedup behavior:
+  - If `Idempotency-Key` header (or payload `idempotency_key`) is provided, duplicate submits return HTTP 200 with the existing lead `id` and `duplicate: true`.
+  - If no key is provided, backend computes a deterministic fingerprint from normalized fields (`name,email,phone,company,product,message,source_url`) plus a short time bucket (default 10 minutes) to absorb accidental double-click duplicates.
+  - Duplicate submits do **not** enqueue a second delivery job.
+  - Dedup hits are recorded in `lead_events` with event type `dedup_hit`. 
+
+## Logging / PII
+- Backend logs are structured JSON lines via `server/utils/logger.js` with levels: `debug`, `info`, `warn`, `error`.
+- Log level is controlled by `LOG_LEVEL` (default: `info`).
+- API and worker logs include both `request_id` and `correlation_id` for traceability.
+- PII-safe masking is applied before emission:
+  - email: masked local/domain fragments
+  - phone: masked digits + length hint
+  - IP: partially masked
+  - message/body/text: snippet + length (no full text dump)
+- Key events are logged with masked payloads: lead submit, validation failures, dedup hits, queue start, adapter delivery result, retries scheduled/exhausted, notifier outcomes.
+- Error logs avoid raw full payload dumps and emit masked/summarized context only.
 
 ## Build check
 ```bash
@@ -101,14 +134,22 @@ npx vite build
 ---
 
 ## Production hardening notes
-Before deploying this lead endpoint to production, add:
+Baseline controls now included in backend:
+
+- **CORS allowlist on `/api/*`**
+  - Controlled via `CORS_ALLOWLIST` (comma-separated origins).
+  - Dev-safe fallback: localhost origins are accepted when allowlist is empty.
+- **Optional captcha verification on `POST /api/lead`**
+  - Supports Turnstile/reCAPTCHA/hCaptcha via env.
+  - In dev: if captcha is not configured, request continues.
+  - In prod: behavior is controlled by `CAPTCHA_REQUIRED_IN_PROD` + `CAPTCHA_FAIL_OPEN`.
+- **Proxy awareness**
+  - `TRUST_PROXY` is optional and should be enabled when behind reverse proxies/load balancers.
+
+Still required before production launch:
 
 - **HTTPS everywhere**
   - Terminate TLS at your edge/proxy and force HTTPS.
-- **Strict CORS policy**
-  - Allow only known origins and methods.
-- **Captcha / bot protection**
-  - Add Turnstile/reCAPTCHA/hCaptcha on lead submission.
 - **Environment secret management**
   - Do not commit secrets; use secure secret stores.
 - **Database backup/restore plan**
@@ -119,7 +160,7 @@ Before deploying this lead endpoint to production, add:
 
 ## Validation notes (current)
 - Required: `name`, `email`
-- Optional: `phone`, `company`, `message`, `product`, `utm`, `source_url`, `lang`, `schema_version`
+- Optional: `phone`, `company`, `message`, `product`, `utm`, `source_url`, `lang`, `schema_version`, `idempotency_key`
 - Email is format-validated server-side.
 - Phone is soft-validated (supports common human-entered formats).
 - Strings are sanitized/normalized and capped per field.
