@@ -7,8 +7,14 @@ import sqlite3 from 'sqlite3';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = Number(process.env.PORT || 8787);
-const DB_PATH = process.env.LEADS_DB_PATH || path.join(__dirname, '..', 'data', 'leads.db');
+function parsePort(raw, fallback = 8787) {
+  const parsed = Number.parseInt(String(raw ?? ''), 10);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) return fallback;
+  return parsed;
+}
+
+const PORT = parsePort(process.env.PORT, 8787);
+const DB_PATH = process.env.DB_PATH || process.env.LEADS_DB_PATH || path.join(__dirname, '..', 'data', 'leads.db');
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
