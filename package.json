@@ -5,10 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node server/index.js",
+    "dev:full": "sh -c 'node server/index.js & vite'",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server/index.js"
   },
   "devDependencies": {
     "vite": "^8.0.4"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "dotenv": "^16.4.5"
   }
 }
