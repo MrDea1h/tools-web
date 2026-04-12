@@ -17,9 +17,9 @@ cp .env.example .env
 
 Defaults are safe for local development:
 - `PORT=8787`
-- `DB_PATH=./data/leads.db`
+- `LEADS_DB_PATH=./data/leads.db`
 
-If `.env` is missing, backend still starts with those defaults.
+Backend reads `.env` automatically via `dotenv`. If `.env` is missing, backend still starts with those defaults.
 
 ## 3) Run backend (API)
 In terminal A:

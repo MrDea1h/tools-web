@@ -1,44 +1,36 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import sqlite3 from 'sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function parsePort(raw, fallback = 8787) {
-  const parsed = Number.parseInt(String(raw ?? ''), 10);
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) return fallback;
-  return parsed;
-}
-
-const PORT = parsePort(process.env.PORT, 8787);
-const DB_PATH = process.env.DB_PATH || process.env.LEADS_DB_PATH || path.join(__dirname, '..', 'data', 'leads.db');
+const PORT = Number(process.env.PORT || 8787);
+const DB_PATH = process.env.LEADS_DB_PATH || path.join(__dirname, '..', 'data', 'leads.db');
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+const db = new DatabaseSync(DB_PATH);
 
-const db = new sqlite3.Database(DB_PATH);
-
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS leads (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at TEXT NOT NULL,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      phone TEXT,
-      company TEXT,
-      product TEXT,
-      message TEXT NOT NULL,
-      lang TEXT,
-      source_url TEXT,
-      ip TEXT,
-      user_agent TEXT,
-      status TEXT NOT NULL DEFAULT 'new'
-    )
-  `);
-});
+db.exec(`
+  CREATE TABLE IF NOT EXISTS leads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TEXT NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT,
+    company TEXT,
+    product TEXT,
+    message TEXT NOT NULL,
+    lang TEXT,
+    source_url TEXT,
+    ip TEXT,
+    user_agent TEXT,
+    status TEXT NOT NULL DEFAULT 'new'
+  )
+`);
 
 const app = express();
 app.use(express.json({ limit: '32kb' }));
@@ -74,36 +66,23 @@ function validate(v) {
   if (!v.message) errors.message = 'Message is required';
   if (v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) errors.email = 'Invalid email format';
 
-  const caps = {
-    name: 120,
-    email: 190,
-    phone: 40,
-    company: 120,
-    product: 200,
-    message: 4000,
-    lang: 8,
-    source_url: 500,
-  };
+  const caps = { name: 120, email: 190, phone: 40, company: 120, product: 200, message: 4000, lang: 8, source_url: 500 };
   for (const [key, max] of Object.entries(caps)) {
     if (v[key] && v[key].length > max) errors[key] = `Too long (max ${max})`;
   }
   return errors;
 }
 
-function run(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function onRun(err) {
-      if (err) return reject(err);
-      resolve(this);
-    });
-  });
-}
+const insertLead = db.prepare(`
+  INSERT INTO leads (created_at, name, email, phone, company, product, message, lang, source_url, ip, user_agent, status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
+`);
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'lead-api' });
 });
 
-app.post('/api/lead', rateLimit, async (req, res) => {
+app.post('/api/lead', rateLimit, (req, res) => {
   try {
     const value = normalize(req.body);
     const errors = validate(value);
@@ -113,26 +92,21 @@ app.post('/api/lead', rateLimit, async (req, res) => {
 
     const ip = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || '';
     const userAgent = req.headers['user-agent'] || '';
-
-    const result = await run(
-      `INSERT INTO leads (created_at, name, email, phone, company, product, message, lang, source_url, ip, user_agent, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')`,
-      [
-        new Date().toISOString(),
-        value.name,
-        value.email,
-        value.phone,
-        value.company,
-        value.product,
-        value.message,
-        value.lang,
-        value.source_url,
-        ip,
-        userAgent,
-      ],
+    const result = insertLead.run(
+      new Date().toISOString(),
+      value.name,
+      value.email,
+      value.phone,
+      value.company,
+      value.product,
+      value.message,
+      value.lang,
+      value.source_url,
+      ip,
+      userAgent,
     );
 
-    return res.status(200).json({ ok: true, id: result.lastID });
+    return res.status(200).json({ ok: true, id: Number(result.lastInsertRowid) });
   } catch (err) {
     console.error('POST /api/lead failed:', err);
     return res.status(500).json({ ok: false, error: 'server_error', message: 'Internal server error' });
