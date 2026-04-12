@@ -4,6 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
+import { dispatchLeadDelivery } from './services/leadDelivery.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,7 +83,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'lead-api' });
 });
 
-app.post('/api/lead', rateLimit, (req, res) => {
+app.post('/api/lead', rateLimit, async (req, res) => {
   try {
     const value = normalize(req.body);
     const errors = validate(value);
@@ -90,10 +91,11 @@ app.post('/api/lead', rateLimit, (req, res) => {
       return res.status(422).json({ ok: false, error: 'validation_failed', errors });
     }
 
+    const createdAt = new Date().toISOString();
     const ip = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || '';
     const userAgent = req.headers['user-agent'] || '';
     const result = insertLead.run(
-      new Date().toISOString(),
+      createdAt,
       value.name,
       value.email,
       value.phone,
@@ -106,7 +108,16 @@ app.post('/api/lead', rateLimit, (req, res) => {
       userAgent,
     );
 
-    return res.status(200).json({ ok: true, id: Number(result.lastInsertRowid) });
+    const leadId = Number(result.lastInsertRowid);
+    const delivery = await dispatchLeadDelivery({
+      id: leadId,
+      created_at: createdAt,
+      ...value,
+      ip,
+      user_agent: userAgent,
+    });
+
+    return res.status(200).json({ ok: true, id: leadId, delivery });
   } catch (err) {
     console.error('POST /api/lead failed:', err);
     return res.status(500).json({ ok: false, error: 'server_error', message: 'Internal server error' });
