@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartPass — Door Automation Accessories</title>
+<meta name="description" content="Professional-grade automatic door accessories for automatic door systems — delivered across Sweden.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Barlow:wght@300;400;500&family=Barlow+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F4F0E8; --paper: #FAFAF7; --charcoal: #1C1C1A; --dark: #121210;
+    --gold: #B8935A; --gold-light: #D4B07A; --mid: #6B6860;
+    --line: rgba(28,28,26,0.12); --line-light: rgba(250,250,247,0.15);
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body: 'Barlow', sans-serif;
+    --font-label: 'Barlow Condensed', sans-serif;
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font-body); background: var(--paper); color: var(--charcoal); overflow-x: hidden; cursor: none; }
+
+  /* CURSOR */
+  .cursor { position: fixed; z-index: 9999; width: 10px; height: 10px; background: var(--charcoal); border-radius: 50%; pointer-events: none; transition: transform 0.15s ease, background 0.2s; transform: translate(-50%,-50%); }
+  .cursor-ring { position: fixed; z-index: 9998; width: 36px; height: 36px; border: 1px solid var(--charcoal); border-radius: 50%; pointer-events: none; transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.2s; transform: translate(-50%,-50%); opacity: 0.5; }
+  .cursor-ring.hovered { transform: translate(-50%,-50%) scale(2); opacity: 0.3; }
+  body.dark-section .cursor { background: var(--cream); }
+  body.dark-section .cursor-ring { border-color: var(--cream); }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 28px 60px; transition: padding 0.4s, background 0.4s, backdrop-filter 0.4s; }
+  nav.scrolled { padding: 18px 60px; background: rgba(244,240,232,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  .nav-logo { font-family: var(--font-label); font-size: 22px; font-weight: 600; letter-spacing: 0.18em; color: var(--charcoal); text-decoration: none; }
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a { font-family: var(--font-label); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--charcoal); text-decoration: none; position: relative; transition: color 0.2s; }
+  .nav-links a::after { content: ''; position: absolute; bottom: -3px; left: 0; width: 0; height: 1px; background: var(--gold); transition: width 0.3s; }
+  .nav-links a:hover::after { width: 100%; }
+  .nav-cta { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 11px 26px; border: none; cursor: none; transition: background 0.25s; text-decoration: none; }
+  .nav-cta:hover { background: var(--gold); }
+
+  /* HERO */
+  .hero { height: 100vh; min-height: 700px; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 60px 80px; position: relative; overflow: hidden; background: var(--charcoal); }
+  .hero-bg { position: absolute; inset: 0; background: linear-gradient(160deg, rgba(18,18,16,0.55) 0%, rgba(18,18,16,0.88) 70%), url('4.jpg') center/cover no-repeat; transform: scale(1.05); transition: transform 8s ease-out; }
+  .hero-bg.loaded { transform: scale(1); }
+  .hero-noise { position: absolute; inset: 0; pointer-events: none; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); background-size: 200px; }
+  .hero-label { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 28px; opacity: 0; transform: translateY(20px); animation: fadeUp 0.8s 0.3s forwards; }
+  .hero-title { font-family: var(--font-display); font-size: clamp(56px, 8vw, 110px); font-weight: 300; line-height: 0.95; color: var(--cream); margin-bottom: 40px; opacity: 0; transform: translateY(30px); animation: fadeUp 1s 0.5s forwards; }
+  .hero-title em { font-style: italic; color: var(--gold-light); }
+  .hero-bottom { display: flex; align-items: flex-end; justify-content: space-between; opacity: 0; transform: translateY(20px); animation: fadeUp 0.8s 0.9s forwards; }
+  .hero-desc { font-size: 15px; font-weight: 300; line-height: 1.7; color: rgba(244,240,232,0.65); max-width: 340px; }
+  .hero-scroll { display: flex; flex-direction: column; align-items: center; gap: 10px; font-family: var(--font-label); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(244,240,232,0.4); }
+  .scroll-line { width: 1px; height: 50px; background: linear-gradient(to bottom, var(--gold), transparent); animation: scrollPulse 2s infinite; }
+  @keyframes scrollPulse { 0%,100%{opacity:.5;transform:scaleY(1)}50%{opacity:1;transform:scaleY(1.1)} }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+  /* MARQUEE */
+  .marquee-strip { background: var(--gold); padding: 14px 0; overflow: hidden; white-space: nowrap; }
+  .marquee-inner { display: inline-flex; animation: marquee 24s linear infinite; }
+  .marquee-item { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--charcoal); padding: 0 48px; }
+  .marquee-item::before { content: '\25C6'; margin-right: 48px; opacity: 0.5; }
+  @keyframes marquee { from{transform:translateX(0)}to{transform:translateX(-50%)} }
+
+  /* REVEAL */
+  section { position: relative; }
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94); }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-left { opacity: 0; transform: translateX(-40px); transition: opacity 0.8s 0.1s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.8s 0.1s cubic-bezier(0.25,0.46,0.45,0.94); }
+  .reveal-left.visible { opacity: 1; transform: translateX(0); }
+  .reveal-right { opacity: 0; transform: translateX(40px); transition: opacity 0.8s 0.2s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.8s 0.2s cubic-bezier(0.25,0.46,0.45,0.94); }
+  .reveal-right.visible { opacity: 1; transform: translateX(0); }
+
+  /* SHARED */
+  .section-tag { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+  .section-tag::before { content: ''; display: block; width: 30px; height: 1px; background: var(--gold); }
+  .btn-primary { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--charcoal); text-decoration: none; padding-bottom: 6px; border-bottom: 1px solid var(--charcoal); transition: color 0.2s, border-color 0.2s; cursor: none; }
+  .btn-primary:hover { color: var(--gold); border-color: var(--gold); }
+  .btn-primary svg { transition: transform 0.3s; }
+  .btn-primary:hover svg { transform: translateX(6px); }
+  .divider { height: 1px; background: var(--line); margin: 0 60px; }
+
+  /* ABOUT */
+  .about { padding: 120px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; background: var(--paper); }
+  .about-left { position: relative; }
+  .about-number { font-family: var(--font-display); font-size: 160px; font-weight: 300; color: rgba(28,28,26,0.06); line-height: 1; position: absolute; top: -30px; left: 40px; pointer-events: none; }
+  .about h2 { font-family: var(--font-display); font-size: clamp(36px, 4.5vw, 58px); font-weight: 300; line-height: 1.1; margin-bottom: 28px; }
+  .about h2 em { font-style: italic; }
+  .about-text { font-size: 15px; font-weight: 300; line-height: 1.8; color: var(--mid); margin-bottom: 36px; }
+  .about-stats { display: flex; gap: 40px; margin-bottom: 36px; }
+  .about-stat-value { font-family: var(--font-display); font-size: 36px; font-weight: 300; color: var(--charcoal); line-height: 1; }
+  .about-stat-label { font-family: var(--font-label); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--mid); margin-top: 6px; }
+  .about-right { display: flex; flex-direction: column; gap: 12px; }
+  .about-main-img { overflow: hidden; aspect-ratio: 4/5; }
+  .about-main-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
+  .about-main-img:hover img { transform: scale(1.04); }
+  .about-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .about-strip-img { overflow: hidden; aspect-ratio: 3/2; background: var(--charcoal); }
+  .about-strip-img img { width: 100%; height: 100%; object-fit: cover; opacity: 0.75; transition: opacity 0.3s; }
+  .about-strip-img:hover img { opacity: 1; }
+
+  /* CATALOG */
+  .catalog { padding: 120px 60px; background: var(--charcoal); }
+  .catalog-header { margin-bottom: 60px; }
+  .catalog-header h2 { font-family: var(--font-display); font-size: clamp(36px, 4.5vw, 58px); font-weight: 300; line-height: 1.1; color: var(--cream); }
+  .catalog-header h2 em { font-style: italic; color: var(--gold-light); }
+  .catalog-header .section-tag { color: var(--gold); }
+  .catalog-header .section-tag::before { background: var(--gold); }
+  .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 48px; }
+  .filter-tab { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(244,240,232,0.5); background: rgba(244,240,232,0.06); border: 1px solid rgba(244,240,232,0.1); padding: 10px 22px; cursor: none; transition: all 0.2s; }
+  .filter-tab:hover { color: var(--cream); background: rgba(244,240,232,0.1); }
+  .filter-tab.active { color: var(--charcoal); background: var(--gold); border-color: var(--gold); }
+  .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .product-card { background: rgba(244,240,232,0.04); border: 1px solid rgba(244,240,232,0.08); display: flex; flex-direction: column; transition: background 0.2s, border-color 0.2s; cursor: none; }
+  .product-card:hover { background: rgba(244,240,232,0.08); border-color: rgba(184,147,90,0.4); }
+  .card-icon-tile { background: rgba(18,18,16,0.6); padding: 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(244,240,232,0.06); }
+  .card-icon-tile svg { width: 32px; height: 32px; opacity: 0.4; color: var(--gold-light); }
+  .card-sku { font-family: var(--font-label); font-size: 11px; font-weight: 600; letter-spacing: 0.2em; color: var(--gold); }
+  .card-body { padding: 24px 28px 0; flex: 1; }
+  .card-name { font-family: var(--font-display); font-size: 20px; font-weight: 400; color: var(--cream); margin-bottom: 10px; line-height: 1.2; }
+  .card-desc { font-size: 13px; font-weight: 300; line-height: 1.6; color: rgba(244,240,232,0.5); }
+  .card-footer { padding: 20px 28px 24px; }
+  .btn-card { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); background: none; border: none; cursor: none; display: inline-flex; align-items: center; gap: 10px; transition: color 0.2s; padding: 0; }
+  .btn-card:hover { color: var(--gold-light); }
+  .btn-card svg { transition: transform 0.3s; }
+  .btn-card:hover svg { transform: translateX(5px); }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(18,18,16,0.85); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 40px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--paper); max-width: 640px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; }
+  .modal-top { padding: 40px 48px 32px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+  .modal-sku { font-family: var(--font-label); font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+  .modal-name { font-family: var(--font-display); font-size: 32px; font-weight: 300; line-height: 1.1; color: var(--charcoal); }
+  .modal-close { background: none; border: none; cursor: none; color: var(--mid); font-size: 24px; line-height: 1; padding: 4px; transition: color 0.2s; flex-shrink: 0; }
+  .modal-close:hover { color: var(--charcoal); }
+  .modal-body { padding: 32px 48px 40px; }
+  .spec-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  .spec-table tr { border-bottom: 1px solid var(--line); }
+  .spec-table td { padding: 12px 0; font-size: 14px; line-height: 1.5; }
+  .spec-table td:first-child { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid); width: 40%; }
+  .spec-notes { list-style: none; margin-bottom: 32px; }
+  .spec-notes li { font-size: 14px; font-weight: 300; color: var(--mid); line-height: 1.6; padding-left: 16px; position: relative; margin-bottom: 6px; }
+  .spec-notes li::before { content: '\2014'; position: absolute; left: 0; color: var(--gold); }
+  .btn-modal-cta { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 14px 32px; border: none; cursor: none; transition: background 0.25s; }
+  .btn-modal-cta:hover { background: var(--gold); }
+
+  /* CONTACT */
+  .contact { padding: 120px 60px; background: var(--paper); }
+  .contact-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 100px; align-items: start; }
+  .contact-left h2 { font-family: var(--font-display); font-size: clamp(36px, 4vw, 54px); font-weight: 300; line-height: 1.1; margin-bottom: 24px; }
+  .contact-left h2 em { font-style: italic; }
+  .contact-left p { font-size: 15px; font-weight: 300; line-height: 1.8; color: var(--mid); margin-bottom: 40px; }
+  .contact-details { display: flex; flex-direction: column; gap: 16px; }
+  .contact-detail { display: flex; align-items: center; gap: 14px; font-size: 14px; font-weight: 300; color: var(--mid); }
+  .contact-detail a { color: var(--mid); text-decoration: none; transition: color 0.2s; }
+  .contact-detail a:hover { color: var(--charcoal); }
+  .contact-detail-icon { width: 20px; opacity: 0.5; flex-shrink: 0; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--mid); }
+  .form-group input, .form-group textarea { font-family: var(--font-body); font-size: 14px; font-weight: 300; color: var(--charcoal); background: none; border: none; border-bottom: 1px solid var(--line); padding: 12px 0; outline: none; transition: border-color 0.2s; resize: none; }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--gold); }
+  .form-group textarea { min-height: 120px; }
+  .btn-submit { font-family: var(--font-label); font-size: 12px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper); background: var(--charcoal); padding: 14px 32px; border: none; cursor: none; transition: background 0.25s; margin-top: 8px; display: inline-flex; align-items: center; gap: 12px; }
+  .btn-submit:hover { background: var(--gold); }
+  .form-success { display: none; font-family: var(--font-display); font-size: 28px; font-weight: 300; color: var(--charcoal); line-height: 1.4; }
+  .form-success em { font-style: italic; color: var(--gold); }
+
+  /* FOOTER */
+  footer { background: var(--dark); padding: 80px 60px 40px; }
+  .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 60px; padding-bottom: 60px; border-bottom: 1px solid var(--line-light); }
+  .footer-logo { font-family: var(--font-label); font-size: 20px; font-weight: 600; letter-spacing: 0.18em; color: var(--cream); margin-bottom: 16px; display: block; }
+  .footer-tagline { font-size: 14px; font-weight: 300; line-height: 1.7; color: rgba(244,240,232,0.4); max-width: 260px; }
+  .footer-col h5 { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(244,240,232,0.35); margin-bottom: 24px; }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .footer-col ul a { font-size: 14px; font-weight: 300; color: rgba(244,240,232,0.55); text-decoration: none; transition: color 0.2s; }
+  .footer-col ul a:hover { color: var(--cream); }
+  .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 32px; }
+  .footer-copy { font-size: 13px; color: rgba(244,240,232,0.25); }
+  .footer-legal a { font-size: 13px; color: rgba(244,240,232,0.25); text-decoration: none; transition: color 0.2s; }
+  .footer-legal a:hover { color: rgba(244,240,232,0.5); }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav id="mainNav">
+  <a href="#" class="nav-logo">SmartPass</a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#catalog">Catalog</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Request Quote</a>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-noise"></div>
+  <div class="hero-label">Door Automation Specialists &mdash; Sweden</div>
+  <h1 class="hero-title">Precision door<br><em>automation</em><br>parts.</h1>
+  <div class="hero-bottom">
+    <p class="hero-desc">Professional-grade accessories for automatic door systems. Sensors, controls, access systems and hardware &mdash; delivered across Sweden.</p>
+    <div class="hero-scroll"><div class="scroll-line"></div><span>Scroll</span></div>
+  </div>
+</section>
+
+<div class="marquee-strip">
+  <div class="marquee-inner">
+    <span class="marquee-item">Sensors</span><span class="marquee-item">Switches</span><span class="marquee-item">Access Control</span><span class="marquee-item">Locks</span><span class="marquee-item">Hardware</span><span class="marquee-item">CE Certified</span><span class="marquee-item">Sensors</span><span class="marquee-item">Switches</span><span class="marquee-item">Access Control</span><span class="marquee-item">Locks</span><span class="marquee-item">Hardware</span><span class="marquee-item">CE Certified</span>
+  </div>
+</div>
+
+<section class="about" id="about">
+  <div class="about-left reveal-left">
+    <div class="about-number">01</div>
+    <div class="section-tag">About SmartPass</div>
+    <h2>The right part,<br><em>every time</em></h2>
+    <p class="about-text">SmartPass is a Swedish supplier of professional automatic door accessories. We stock sensors, switches, access control systems, locks, and hardware components for professional installers, property managers, and building companies across Sweden.</p>
+    <div class="about-stats">
+      <div><div class="about-stat-value">45+</div><div class="about-stat-label">Products</div></div>
+      <div><div class="about-stat-value">CE</div><div class="about-stat-label">Certified</div></div>
+      <div><div class="about-stat-value">SE</div><div class="about-stat-label">Delivery</div></div>
+    </div>
+    <a href="#catalog" class="btn-primary">Browse catalog <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></a>
+  </div>
+  <div class="about-right reveal-right">
+    <div class="about-main-img"><img src="5.jpg" alt="SmartPass door operator" loading="lazy"></div>
+    <div class="about-strip">
+      <div class="about-strip-img"><img src="1.png" alt="Controller board" loading="lazy"></div>
+      <div class="about-strip-img"><img src="3.png" alt="Sliding mechanism" loading="lazy"></div>
+      <div class="about-strip-img"><img src="6.jpg" alt="Operator internals" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section class="catalog" id="catalog">
+  <div class="catalog-header reveal">
+    <div class="section-tag">Product Catalog</div>
+    <h2>Browse our<br><em>full range</em></h2>
+  </div>
+  <div class="filter-tabs" id="filterTabs">
+    <button class="filter-tab active" data-filter="all">All</button>
+    <button class="filter-tab" data-filter="sensors">Sensors</button>
+    <button class="filter-tab" data-filter="switches">Switches &amp; Controls</button>
+    <button class="filter-tab" data-filter="access">Access Control</button>
+    <button class="filter-tab" data-filter="locks">Locks</button>
+    <button class="filter-tab" data-filter="hardware">Hardware</button>
+  </div>
+  <div class="product-grid" id="productGrid"></div>
+</section>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-top">
+      <div><div class="modal-sku" id="modalSku"></div><div class="modal-name" id="modalName"></div></div>
+      <button class="modal-close" id="modalClose">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <table class="spec-table" id="specTable"></table>
+      <ul class="spec-notes" id="specNotes"></ul>
+      <button class="btn-modal-cta" id="modalCta">Request Quote <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<section class="contact" id="contact">
+  <div class="contact-inner">
+    <div class="contact-left reveal-left">
+      <div class="section-tag">Get in Touch</div>
+      <h2>Request a quote or<br><em>ask a question</em></h2>
+      <p>Send us your enquiry and we will get back to you promptly with product availability, specifications, and pricing.</p>
+      <div class="contact-details">
+        <div class="contact-detail">
+          <svg class="contact-detail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="1"/><path d="M2 4l8 7 8-7"/></svg>
+          <a href="mailto:hello@smartpass.se">hello@smartpass.se</a>
+        </div>
+        <div class="contact-detail">
+          <svg class="contact-detail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4c0-1.1.9-2 2-2h1.5l2 4-1.5 1.5c1 2 2.5 3.5 4.5 4.5L14 10.5l4 2V14a2 2 0 01-2 2C7 16 4 9 4 4z"/></svg>
+          <a href="tel:+460000000000">+46 XX XXX XXXX</a>
+        </div>
+        <div class="contact-detail">
+          <svg class="contact-detail-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2C6.7 2 4 4.7 4 8c0 5 6 10 6 10s6-5 6-10c0-3.3-2.7-6-6-6z"/><circle cx="10" cy="8" r="2"/></svg>
+          <span>Stockholm, Sweden</span>
+        </div>
+      </div>
+    </div>
+    <div class="reveal-right">
+      <form id="contactForm" novalidate>
+        <div class="form-grid">
+          <div class="form-group"><label for="fieldName">Full Name *</label><input type="text" id="fieldName" name="name" required placeholder="Jan Svensson"></div>
+          <div class="form-group"><label for="fieldCompany">Company</label><input type="text" id="fieldCompany" name="company" placeholder="Svensson Bygg AB"></div>
+          <div class="form-group"><label for="fieldEmail">Email *</label><input type="email" id="fieldEmail" name="email" required placeholder="jan@example.se"></div>
+          <div class="form-group"><label for="fieldPhone">Phone</label><input type="tel" id="fieldPhone" name="phone" placeholder="+46 70 000 00 00"></div>
+          <div class="form-group full"><label for="productInterest">Product of Interest</label><input type="text" id="productInterest" name="product" placeholder="e.g. MS01 Microwave Sensor"></div>
+          <div class="form-group full"><label for="fieldMessage">Message *</label><textarea id="fieldMessage" name="message" required placeholder="Tell us about your project or ask a question..."></textarea></div>
+        </div>
+        <button type="submit" class="btn-submit">Send Request <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      </form>
+      <div class="form-success" id="formSuccess">Thank you &mdash;<br>we will be in <em>touch</em> shortly.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-top">
+    <div class="reveal">
+      <span class="footer-logo">SmartPass</span>
+      <p class="footer-tagline">Professional door automation accessories for Sweden.</p>
+    </div>
+    <div class="footer-col reveal" style="transition-delay:0.1s">
+      <h5>Catalog</h5>
+      <ul>
+        <li><a href="#catalog">Sensors</a></li>
+        <li><a href="#catalog">Switches &amp; Controls</a></li>
+        <li><a href="#catalog">Access Control</a></li>
+        <li><a href="#catalog">Locks</a></li>
+        <li><a href="#catalog">Hardware</a></li>
+      </ul>
+    </div>
+    <div class="footer-col reveal" style="transition-delay:0.2s">
+      <h5>Contact</h5>
+      <ul>
+        <li><a href="mailto:hello@smartpass.se">hello@smartpass.se</a></li>
+        <li><a href="tel:+460000000000">+46 XX XXX XXXX</a></li>
+        <li><a href="#contact">Stockholm, Sweden</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">&copy; 2026 SmartPass. All rights reserved.</div>
+    <div class="footer-legal"><a href="#">Privacy Policy</a></div>
+  </div>
+</footer>
+
+<script>
+var PRODUCTS = [
+  {sku:'MS01',name:'Microwave Sensor 10/24GHz',category:'sensors',shortDesc:'Dual-frequency, IP52, adjustable range up to 4M',specs:[['Power','AC/DC 12\u201336V'],['Frequency','10.525GHz / 24.125GHz'],['Protection','IP52'],['Dimensions','131\xd761\xd746mm (L\xd7W\xd7H)'],['Max height','4M']],notes:['Black or silver colour optional','Detection range and sensitivity adjustable']},
+  {sku:'MS02',name:'Microwave Sensor 24GHz',category:'sensors',shortDesc:'Slim curved profile, IP52, 4M installation height',specs:[['Power','AC/DC 12\u201336V'],['Frequency','24.125GHz'],['Protection','IP52'],['Dimensions','140\xd746\xd745mm (L\xd7W\xd7H)'],['Max height','4M']],notes:['Detection range and sensitivity adjustable']},
+  {sku:'MS03',name:'Microwave Sensor 24GHz Twin',category:'sensors',shortDesc:'Oval twin-head design, IP52, black or silver',specs:[['Power','AC/DC 12\u201336V'],['Frequency','24.125GHz'],['Protection','IP52'],['Dimensions','121\xd780\xd751mm (L\xd7W\xd7H)'],['Max height','4M']],notes:['Black or silver colour optional','Detection range and sensitivity adjustable']},
+  {sku:'MS-204',name:'Microwave Sensor 24GHz Pro',category:'sensors',shortDesc:'Rectangular housing, IP52, 50Hz/60Hz compatible',specs:[['Power','AC/DC 12\u201330V \xb110% (50\u201360Hz)'],['Frequency','24.125GHz'],['Protection','IP52'],['Dimensions','150\xd750\xd738mm (L\xd7W\xd7H)'],['Max height','4M']],notes:['Black or silver colour optional','Detection range and sensitivity adjustable']},
+  {sku:'IS01',name:'Infrared Sensor',category:'sensors',shortDesc:'0.2\u20132m sensing distance, IP52, 3M max height',specs:[['Power','AC/DC 12\u201336V'],['Sensing distance','0.2\u20132m'],['Protection','IP52'],['Dimensions','221\xd774\xd735mm (L\xd7W\xd7H)'],['Max height','3M']],notes:['Ideal for narrow environments close to street','Detection sensing distance adjustable','High anti-interference, reliable operation']},
+  {sku:'IS02',name:'Combined Microwave & Infrared Sensor',category:'sensors',shortDesc:'Radar activation + IR safety, IP54, anti-clip design',specs:[['Power','AC/DC 12\u201336V'],['Frequency','24.125GHz'],['Protection','IP54'],['Dimensions','262\xd755\xd744mm (L\xd7W\xd7H)'],['Max height','3M']],notes:['Radar for door activation, IR for safety','Unique anti-clip function \u2014 no extra safety beams needed','Background self-learning on power-up','Suitable for sliding, folding, and curve doors']},
+  {sku:'IS03',name:'Infrared Motion & Presence Safety Sensor',category:'sensors',shortDesc:'LED indicator, IP54, background self-learning',specs:[['Power','AC/DC 12\u201324V (\xb110%)'],['Frequency','24.125GHz'],['Protection','IP54'],['Dimensions','229\xd767\xd741mm (L\xd7W\xd7H)'],['Max height','3M']],notes:['Opening and safety protection for translational doors','IR sensing for start and anti-clamping','Background self-learning, always self-correcting']},
+  {sku:'IS04',name:'Microwave Motion & Infrared Presence Sensor',category:'sensors',shortDesc:'Dual-tech, IP44, 3.5M height, background self-learning',specs:[['Power','AC/DC 12\u201330V (\xb110%)'],['Frequency','24.125GHz'],['Protection','IP44'],['Dimensions','267.2\xd761.1\xd746mm (L\xd7W\xd7H)'],['Max height','3.5M']],notes:['Used for sliding, folding and curve doors','Radar for activation, IR for safety entrance','Background self-learning, always self-correcting']},
+  {sku:'PT01',name:'Safety Beam (Photocell)',category:'sensors',shortDesc:'Single or double beam, 10M range, IP52',specs:[['Power','AC/DC 12\u201330V'],['Max range','10M'],['Types','Single beam (1 pair) / Double beam (2 pairs)'],['Receiver','105.5\xd753.4\xd728.5mm'],['Electric eyes','19(L)\xd713(dia.)mm']],notes:[]},
+  {sku:'V01-S',name:'Microwave & Infrared Presence Sensor',category:'sensors',shortDesc:'IP44, 267\xd761\xd738mm, 3.5M height',specs:[['Power','AC/DC 12\u201324V (\xb110%)'],['Frequency','24.125GHz'],['Protection','IP44'],['Dimensions','267\xd761\xd738mm (L\xd7W\xd7H)'],['Max height','3.5M']],notes:['For sliding, folding and curve doors','Radar for activation, IR for safety entrance','Background self-learning']},
+  {sku:'FS01',name:'Foot Sensor Switch',category:'switches',shortDesc:'Hands-free activation, 0.3M floor mount, hospital grade',specs:[['Power','AC/DC 12\u201336V'],['Install height','0.3M from ground'],['Technology','Active infrared modulation']],notes:['Widely used in operating rooms and laboratories','Prevents hand contamination']},
+  {sku:'FC01',name:'Programmed Function Switch',category:'switches',shortDesc:'5-range, password protected, memory on power loss',specs:[['Power','12\u201336V'],['Functions','Full open, half open, exit only, lock, automatic'],['Dimensions','113\xd763\xd720mm (L\xd7W\xd7H)']],notes:['Password protected against unauthorised changes','Memory function retains settings on power failure','Password can be reset']},
+  {sku:'FC02',name:'Function Keypad',category:'switches',shortDesc:'5-range keypad: full/half open, exit, lock, auto',specs:[['Power','12\u201336V'],['Functions','Full open, half open, exit only, lock, automatic'],['Dimensions','86\xd786\xd710mm (L\xd7W\xd7H)']],notes:[]},
+  {sku:'FC04',name:'Remote Control Device',category:'switches',shortDesc:'4-channel 433MHz learning code, 25M range',specs:[['Power','24VDC'],['Technology','433MHz learning code'],['Range','25M'],['Functions','Full open, half open, lock, automatic']],notes:['Optional remote keys available']},
+  {sku:'KP01',name:'Function Key Switch',category:'switches',shortDesc:'5-range key switch, AC/DC 18\u201336V',specs:[['Power','AC/DC 18\u201336V'],['Functions','Full open, half open, exit only, lock, automatic'],['Dimensions','86\xd786\xd710mm (L\xd7W\xd7H)']],notes:[]},
+  {sku:'KP02',name:'LED Key Switch',category:'switches',shortDesc:'5-range with backlit panel, bottom panel design',specs:[['Power','AC/DC 18\u201336V'],['Functions','Full open, half open, exit only, lock, automatic'],['Dimensions','92\xd792\xd746mm (L\xd7W\xd7H)']],notes:['Special design with bottom panel for different installation occasions']},
+  {sku:'KP03',name:'LCD Key Switch',category:'switches',shortDesc:'TFT colour display, 5-range, bottom panel design',specs:[['Power','AC/DC 12\u201336V'],['Functions','Full open, half open, exit only, lock, automatic'],['Dimensions','92\xd792\xd733mm (L\xd7W\xd7H)'],['Display','TFT true colour LCD']],notes:['Special design with bottom panel for different installation occasions']},
+  {sku:'PB01',name:'Wired Plastic Switch',category:'switches',shortDesc:'Compact panel switch, 86\xd786mm',specs:[['Weight','50g'],['Dimensions','86\xd786mm (L\xd7W)']],notes:[]},
+  {sku:'PB02',name:'Wired Stainless Switch',category:'switches',shortDesc:'Blue LED, stainless steel, 86\xd786\xd735mm',specs:[['Weight','65g'],['Dimensions','86\xd786\xd735mm (L\xd7W\xd7H)'],['Feature','Blue LED indicator']],notes:[]},
+  {sku:'PB03',name:'Wired Push Button (Plastic)',category:'switches',shortDesc:'Slim bar format, 203\xd741\xd712.5mm',specs:[['Weight','96g'],['Dimensions','203\xd741\xd712.5mm (L\xd7W\xd7H)']],notes:[]},
+  {sku:'PB05',name:'Infrared Touchless Switch',category:'switches',shortDesc:'1\u201315cm sensing, AC/DC 12\u201336V, 110g',specs:[['Power','AC/DC 12\u201336V'],['Technology','Infrared induction'],['Sensing distance','1\u201315cm (adjustable)'],['Dimensions','113\xd763\xd720mm (L\xd7W\xd7H)'],['Weight','110g']],notes:[]},
+  {sku:'PB06',name:'Wireless Push Button',category:'switches',shortDesc:'1\u20139s hold-open, 50m wireless range',specs:[['Power','AC/DC 12\u201336V'],['Range','50m wireless'],['Hold-open time','1\u20139s adjustable'],['Panel','203(L)\xd741(W)\xd712.5(H)mm'],['Receiver','123(L)\xd750(W)\xd732(H)mm']],notes:['Easy installation \u2014 ideal where wire embedding is difficult']},
+  {sku:'PB08',name:'Wireless Push Button (Mirror)',category:'switches',shortDesc:'Mirror finish, 50m wireless range',specs:[['Power','AC/DC 12\u201324V'],['Range','50m wireless'],['Panel','159(L)\xd735(W)mm'],['Receiver','73(L)\xd741(W)\xd723(H)mm']],notes:[]},
+  {sku:'WS01',name:'Wireless Touchless Switch (Mirror)',category:'switches',shortDesc:'Mirror type, 1\u201330cm inductive, 50m range',specs:[['Power','AC/DC 12\u201324V'],['Range','50m wireless'],['Sensing distance','1\u201330cm (adjustable)'],['Panel','162(L)\xd738(W)\xd714.4(H)mm'],['Receiver','73(L)\xd741(W)\xd723(H)mm']],notes:[]},
+  {sku:'V01',name:'Wireless Handicap Access Switch',category:'access',shortDesc:'129\xd7129mm panel, 2.4GHz, 30M range, long battery life',specs:[['Dimensions','129(L)\xd7129(W)\xd746(H)mm'],['Battery','AA\xd72, 20,000 presses'],['Receiver power','AC/DC 12\u201330V'],['Technology','2.4GHz high frequency'],['Range','30M (open area)']],notes:['Press to open','Designed for accessibility applications']},
+  {sku:'V02',name:'Narrow Wireless Hand Press Switch',category:'access',shortDesc:'Low-power 2.4GHz panel, relay output, long battery',specs:[['Receiver power','DC 12\u201330V'],['Technology','2.4GHz wireless'],['Output','Relay signal, 1.5s door opening signal']],notes:['Wide input voltage receiver design','Compatible with auto door and access control controllers']},
+  {sku:'V03',name:'Autodoor Room Controller',category:'access',shortDesc:'Timed access, Braille + multilingual display, relay output',specs:[['Power','AC/DC 12\u201336V'],['Panel','245(L)\xd784(W)\xd712(H)mm'],['Controller','145(L)\xd757(W)\xd738(H)mm'],['Languages','English, Chinese, Korean']],notes:['Limits the number of occasions (mother/baby rooms, private toilets)','Braille, speech and lamp hints for accessibility','Maximum use time reminder function']},
+  {sku:'FP01',name:'Fingerprint Access Controller',category:'access',shortDesc:'1000 fingerprints, ID card + password, voice prompt',specs:[['Power','12VDC'],['Fingerprint capacity','1,000'],['Recorded capacity','100,000'],['Dimensions','180\xd782\xd753mm (L\xd7W\xd7H)'],['ID modes','Fingerprint / ID card / Password']],notes:['Voice prompt available','Time attendance functionality']},
+  {sku:'FP02',name:'Fingerprint Reader (Stainless)',category:'access',shortDesc:'Stainless steel housing, 120 capacity, DC 12V',specs:[['Power','DC 12V'],['Memory capacity','120'],['Weight','500g'],['Dimensions','115\xd770\xd735mm (L\xd7W\xd7H)']],notes:[]},
+  {sku:'AK02',name:'Access Keypad (Plastic)',category:'access',shortDesc:'500 users, 1000 card capacity, controls electric lock',specs:[['Power','12VDC'],['User capacity','500'],['Card storage','1,000'],['Dimensions','117\xd7117\xd721mm'],['Open methods','Card, password, or both']],notes:['Can also control electric lock and auto-door','Designed for office, housing and building access']},
+  {sku:'AK03',name:'Access Keypad',category:'access',shortDesc:'1000 users, touchscreen, card/password/combined',specs:[['Power','12VDC'],['User capacity','1,000'],['Dimensions','115\xd775\xd721mm'],['Open methods','Card, password, card+password']],notes:[]},
+  {sku:'AK04',name:'Access Keypad (Numeric)',category:'access',shortDesc:'1000 users, numeric keypad, card/password/combined',specs:[['Power','12VDC'],['User capacity','1,000'],['Dimensions','110\xd775\xd725mm'],['Open methods','Card, password, card+password']],notes:[]},
+  {sku:'MCR',name:'Magnetic Card Reader',category:'access',shortDesc:'5600 cards, online/offline, 138\xd756\xd732mm',specs:[['Power','12VDC'],['Storage capacity','5,600 cards'],['Dimensions','138\xd756\xd732mm (L\xd7W\xd7H)']],notes:['Used as exit switch for VIP rooms','Supports online and offline working modes']},
+  {sku:'DS01',name:'Auto Door Disable Switch',category:'access',shortDesc:'Stainless panel, emergency open + full lock, key select',specs:[['Power','AC/DC 12\u201336V'],['Panel','160(L)\xd7120(W)\xd715(H)mm'],['Material','Stainless steel panel']],notes:['Key selects: Emergency opening, Automatic, Full lock','Suitable for disabled-person washrooms and building management']},
+  {sku:'LC01',name:'Metal Manual Lock',category:'locks',shortDesc:'Key-operated manual lock for automatic doors',specs:[['Type','Metal manual lock'],['Operation','Lock manually, open with key']],notes:[]},
+  {sku:'LC02',name:'Electric Lock',category:'locks',shortDesc:'DC 12V, 110mA, flush-mount installation',specs:[['Power','DC 12V'],['Working current','110mA'],['Installation hole','212(L)\xd735(W)mm'],['Depth into wall','~43mm'],['Panel','205\xd734\xd742mm (L\xd7W\xd7H)']],notes:[]},
+  {sku:'LC03',name:'Electromagnetic Lock',category:'locks',shortDesc:'DC 12V, 180mA, bracket included',specs:[['Power','DC 12V'],['Working current','180mA']],notes:['Used with access control devices','Bracket included for installation']},
+  {sku:'LC04',name:'Electromagnetic Lock (Heavy Duty)',category:'locks',shortDesc:'DC 12V, 180kg load, glass/wood/iron/fireproof doors',specs:[['Power','DC 12V'],['Working current','960mA'],['Load capacity','180kg']],notes:['Compatible with glass, wooden, iron and fireproof doors','Used with access control devices']},
+  {sku:'GC01',name:'Glass Clamp 20cm',category:'hardware',shortDesc:'Connects glass panel to hanger, 2 pcs per door leaf',specs:[['Length','20cm'],['Application','Glass door panel to hanger'],['Quantity','2 pcs per door leaf']],notes:[]},
+  {sku:'GC02',name:'Glass Clamp 1m',category:'hardware',shortDesc:'Full-length clamp for frameless glass doors',specs:[['Length','1m'],['Application','Frameless glass door, connects glass to hangers'],['Quantity','1 pc per door leaf']],notes:[]},
+  {sku:'FG01',name:'Framed Door Guider 10\u201340mm',category:'hardware',shortDesc:'Rubber or brush type, fits 10\u201340mm',specs:[['Range','10\u201340mm'],['Types','Rubber or brush (optional)']],notes:[]},
+  {sku:'FG02',name:'Framed Door Guider 30\u201360mm',category:'hardware',shortDesc:'Rubber or brush type, fits 30\u201360mm',specs:[['Range','30\u201360mm'],['Types','Rubber or brush (optional)']],notes:[]},
+  {sku:'FG03',name:'Frameless Glass Door Guider',category:'hardware',shortDesc:'Bottom guide for frameless glass doors, max 15mm',specs:[['Max thickness','15mm'],['Application','Frameless glass door bottom guide']],notes:[]},
+  {sku:'UPS',name:'Automatic Door Backup Battery',category:'hardware',shortDesc:'7hr runtime, 500 open/close cycles, 12V + 24V output',specs:[['Input','220VAC, 50Hz'],['Output','DC 12V/5.2A + DC 24V/2.6A'],['Dimensions','243\xd759\xd745mm (L\xd7W\xd7H)'],['Runtime','7 hours on battery power'],['Cycles','500 open/close cycles']],notes:[]},
+  {sku:'V04',name:'Moving Safety Curtain (Laser)',category:'hardware',shortDesc:'Laser safety, 500\u20132800mm scan range, swing & slide doors',specs:[['Power','AC/DC 12\u201330V (\u2212/+10%)'],['Scan range','500\u20132800mm (mechanical wheel)'],['Detection diameter','~75mm'],['Re-action time','\u2264100ms'],['Swing door size','620(L)\xd731(W)\xd720(H)mm']],notes:['Detects moving or standing body or objects','Prevents collision with automatic rotation and swing doors','Not affected by sunlight, snow, rain or environment','Tool-free adjustment via mechanical wheel']}
+];
+
+var CAT_ICONS = {
+  sensors: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="16" cy="16" r="4"/><circle cx="16" cy="16" r="8" opacity=".5"/><circle cx="16" cy="16" r="12" opacity=".25"/></svg>',
+  switches: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="12" width="20" height="8" rx="4"/><circle cx="22" cy="16" r="3" fill="currentColor" opacity=".6"/></svg>',
+  access: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="14" r="5"/><line x1="16" y1="14" x2="26" y2="14"/><line x1="22" y1="14" x2="22" y2="18"/><line x1="26" y1="14" x2="26" y2="18"/></svg>',
+  locks: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="15" width="16" height="12" rx="2"/><path d="M11 15v-4a5 5 0 0110 0v4"/><circle cx="16" cy="21" r="2" fill="currentColor" opacity=".6"/></svg>',
+  hardware: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="16" cy="16" r="4"/><path d="M16 4v4M16 24v4M4 16h4M24 16h4M7.5 7.5l2.8 2.8M21.7 21.7l2.8 2.8M7.5 24.5l2.8-2.8M21.7 10.3l2.8-2.8" stroke-linecap="round"/></svg>'
+};
+
+var revealObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+function renderCards(filter) {
+  var grid = document.getElementById('productGrid');
+  var list = filter === 'all' ? PRODUCTS : PRODUCTS.filter(function(p){ return p.category === filter; });
+  var html = '';
+  list.forEach(function(p, i) {
+    var delay = (i % 3) * 0.07;
+    html += '<div class="product-card reveal" style="transition-delay:' + delay + 's" data-category="' + p.category + '" onclick="openModal(\'' + p.sku + '\')">'
+      + '<div class="card-icon-tile">' + CAT_ICONS[p.category] + '<span class="card-sku">' + p.sku + '</span></div>'
+      + '<div class="card-body"><div class="card-name">' + p.name + '</div><div class="card-desc">' + p.shortDesc + '</div></div>'
+      + '<div class="card-footer"><button class="btn-card" onclick="event.stopPropagation();openModal(\'' + p.sku + '\')">View Details '
+      + '<svg width="14" height="9" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'
+      + '</button></div></div>';
+  });
+  grid.innerHTML = html;
+  grid.querySelectorAll('.reveal').forEach(function(el){ revealObserver.observe(el); });
+}
+
+document.getElementById('filterTabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.filter-tab');
+  if (!tab) return;
+  document.querySelectorAll('.filter-tab').forEach(function(t){ t.classList.remove('active'); });
+  tab.classList.add('active');
+  renderCards(tab.dataset.filter);
+});
+
+function openModal(sku) {
+  var p = PRODUCTS.filter(function(x){ return x.sku === sku; })[0];
+  if (!p) return;
+  document.getElementById('modalSku').textContent = p.sku;
+  document.getElementById('modalName').textContent = p.name;
+  var rows = '';
+  p.specs.forEach(function(s){ rows += '<tr><td>' + s[0] + '</td><td>' + s[1] + '</td></tr>'; });
+  document.getElementById('specTable').innerHTML = rows;
+  var notesList = '';
+  p.notes.forEach(function(n){ notesList += '<li>' + n + '</li>'; });
+  var notesEl = document.getElementById('specNotes');
+  notesEl.innerHTML = notesList;
+  notesEl.style.display = p.notes.length ? 'block' : 'none';
+  document.getElementById('modalCta').dataset.product = p.name;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', function(e){ if (e.target === e.currentTarget) closeModal(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
+document.getElementById('modalCta').addEventListener('click', function() {
+  var name = document.getElementById('modalCta').dataset.product;
+  closeModal();
+  document.getElementById('productInterest').value = name;
+  document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+  setTimeout(function(){ document.getElementById('fieldName').focus(); }, 600);
+});
+
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  document.getElementById('contactForm').style.display = 'none';
+  document.getElementById('formSuccess').style.display = 'block';
+});
+
+var cursor = document.getElementById('cursor');
+var ring = document.getElementById('cursorRing');
+var mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', function(e){ mx = e.clientX; my = e.clientY; });
+function animateCursor() {
+  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+document.querySelectorAll('a, button, .product-card, .filter-tab').forEach(function(el) {
+  el.addEventListener('mouseenter', function(){ ring.classList.add('hovered'); });
+  el.addEventListener('mouseleave', function(){ ring.classList.remove('hovered'); });
+});
+
+var nav = document.getElementById('mainNav');
+window.addEventListener('scroll', function(){ nav.classList.toggle('scrolled', window.scrollY > 60); });
+window.addEventListener('load', function(){ document.getElementById('heroBg').classList.add('loaded'); });
+document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(function(el){ revealObserver.observe(el); });
+
+var darkSections = document.querySelectorAll('.catalog, footer');
+var sectionObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) document.body.classList.add('dark-section');
+    else {
+      var anyDark = Array.from(darkSections).some(function(s){ var r = s.getBoundingClientRect(); return r.top < window.innerHeight / 2 && r.bottom > window.innerHeight / 2; });
+      if (!anyDark) document.body.classList.remove('dark-section');
+    }
+  });
+}, { threshold: 0.1 });
+darkSections.forEach(function(s){ sectionObserver.observe(s); });
+
+renderCards('all');
+</script>
+</body>
+</html>
