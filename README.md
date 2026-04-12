@@ -114,6 +114,18 @@ Lifecycle note:
   - Duplicate submits do **not** enqueue a second delivery job.
   - Dedup hits are recorded in `lead_events` with event type `dedup_hit`. 
 
+## Logging / PII
+- Backend logs are structured JSON lines via `server/utils/logger.js` with levels: `debug`, `info`, `warn`, `error`.
+- Log level is controlled by `LOG_LEVEL` (default: `info`).
+- API and worker logs include both `request_id` and `correlation_id` for traceability.
+- PII-safe masking is applied before emission:
+  - email: masked local/domain fragments
+  - phone: masked digits + length hint
+  - IP: partially masked
+  - message/body/text: snippet + length (no full text dump)
+- Key events are logged with masked payloads: lead submit, validation failures, dedup hits, queue start, adapter delivery result, retries scheduled/exhausted, notifier outcomes.
+- Error logs avoid raw full payload dumps and emit masked/summarized context only.
+
 ## Build check
 ```bash
 npx vite build

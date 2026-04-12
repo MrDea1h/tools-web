@@ -78,8 +78,6 @@ db.exec(`CREATE TABLE IF NOT EXISTS leads (
   dedup_bucket TEXT
 )`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at DESC)`);
-db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_idempotency_key_unique ON leads(idempotency_key) WHERE idempotency_key IS NOT NULL AND idempotency_key <> ''`);
-db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_dedup_fingerprint_unique ON leads(dedup_fingerprint) WHERE dedup_fingerprint IS NOT NULL AND dedup_fingerprint <> ''`);
 
 db.exec(`CREATE TABLE IF NOT EXISTS lead_delivery_queue (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,6 +115,8 @@ ensureColumn('leads', 'external_id', 'TEXT');
 ensureColumn('leads', 'idempotency_key', 'TEXT');
 ensureColumn('leads', 'dedup_fingerprint', 'TEXT');
 ensureColumn('leads', 'dedup_bucket', 'TEXT');
+db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_idempotency_key_unique ON leads(idempotency_key) WHERE idempotency_key IS NOT NULL AND idempotency_key <> ''`);
+db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_dedup_fingerprint_unique ON leads(dedup_fingerprint) WHERE dedup_fingerprint IS NOT NULL AND dedup_fingerprint <> ''`);
 ensureColumn('lead_delivery_queue', 'status', `TEXT NOT NULL DEFAULT '${QUEUE_STATUS.PENDING}'`);
 ensureColumn('lead_delivery_queue', 'attempts', 'INTEGER NOT NULL DEFAULT 0');
 ensureColumn('lead_delivery_queue', 'next_attempt_at', "TEXT NOT NULL DEFAULT (datetime('now'))");
@@ -456,48 +456,64 @@ async function runDeliveryWorkerTick() {
 
     const now = new Date().toISOString();
     const workerReqId = `worker-${randomUUID()}`;
+    const workerLog = logger.child({ request_id: workerReqId, correlation_id: workerReqId, worker: 'lead_delivery', queue_id: item.queue_id, lead_id: item.lead_id });
+    workerLog.info('worker_processing_started', { attempts_so_far: item.attempts, lead: item });
+
     db.prepare(`UPDATE lead_delivery_queue SET status='processing', updated_at=? WHERE id=?`).run(now, item.queue_id);
     addLeadEvent({ leadId: item.lead_id, eventType: 'processing_started', payload: { queue_id: item.queue_id }, requestId: workerReqId });
 
     const delivery = await dispatchLeadDelivery({
       id: item.lead_id, created_at: item.created_at, name: item.name, email: item.email, phone: item.phone, company: item.company,
       message: item.message, product: item.product, utm: item.utm, source_url: item.source_url, lang: item.lang, schema_version: item.schema_version,
-      ip: item.ip, user_agent: item.user_agent, request_id: workerReqId,
+      ip: item.ip, user_agent: item.user_agent, request_id: workerReqId, correlation_id: workerReqId,
     });
 
     const attempts = Number(item.attempts) + 1;
     const crmResult = delivery.results.find((r) => r.adapter === 'crm');
-    const externalId = crmResult?.external_id || null;
+    const externalId = crmResult?.external_id || crmResult?.externalId || null;
 
     if (delivery.ok) {
       db.prepare(`UPDATE lead_delivery_queue SET status='delivered', attempts=?, last_error=NULL, external_id=COALESCE(?, external_id), updated_at=? WHERE id=?`).run(attempts, externalId, now, item.queue_id);
       db.prepare(`UPDATE leads SET status=?, external_id=COALESCE(?, external_id) WHERE id=?`).run(LEAD_STATUS.DELIVERED, externalId, item.lead_id);
       addLeadEvent({ leadId: item.lead_id, eventType: 'delivered_to_integrations', payload: { attempts, results: delivery.results }, requestId: workerReqId });
+      workerLog.info('worker_delivery_success', { attempts, results: delivery.results, external_id: externalId });
     } else {
       const nextAttemptAt = nextBackoffIso(attempts);
       const errorText = delivery.results.filter((r) => r.status === 'failed').map((r) => `${r.adapter}: ${r.reason}`).join(' | ') || 'delivery_failed';
       const queueStatus = attempts >= MAX_ATTEMPTS ? QUEUE_STATUS.FAILED : QUEUE_STATUS.PENDING;
-      db.prepare(`UPDATE lead_delivery_queue SET status=?, attempts=?, last_error=?, next_attempt_at=?, updated_at=? WHERE id=?`).run(queueStatus, attempts, errorText.slice(0, 2000), nextAttemptAt, now, item.queue_id);
+      db.prepare(`UPDATE lead_delivery_queue SET status=?, attempts=?, last_error=?, next_attempt_at=?, updated_at=? WHERE id=?`).run(queueStatus, attempts, maskPII(errorText).slice(0, 2000), nextAttemptAt, now, item.queue_id);
       db.prepare(`UPDATE leads SET status=? WHERE id=?`).run(LEAD_STATUS.FAILED, item.lead_id);
-      addLeadEvent({ leadId: item.lead_id, eventType: attempts >= MAX_ATTEMPTS ? 'retry_exhausted' : 'retry_scheduled', payload: { attempts, next_attempt_at: nextAttemptAt, error: errorText }, requestId: workerReqId });
+      addLeadEvent({ leadId: item.lead_id, eventType: attempts >= MAX_ATTEMPTS ? 'retry_exhausted' : 'retry_scheduled', payload: { attempts, next_attempt_at: nextAttemptAt, error: maskPII(errorText) }, requestId: workerReqId });
+      workerLog.warn(attempts >= MAX_ATTEMPTS ? 'worker_retry_exhausted' : 'worker_retry_scheduled', {
+        attempts,
+        next_attempt_at: nextAttemptAt,
+        queue_status: queueStatus,
+        failed_results: delivery.results.filter((r) => r.status === 'failed'),
+      });
     }
   } catch (error) {
-    console.error('Delivery worker tick failed:', error);
+    logger.error('delivery_worker_tick_failed', { request_id: 'worker-loop', correlation_id: 'worker-loop', error });
   } finally {
     workerBusy = false;
   }
 }
 
-setInterval(() => runDeliveryWorkerTick().catch((error) => console.error('Delivery worker crashed:', error)), WORKER_INTERVAL_MS);
+setInterval(() => runDeliveryWorkerTick().catch((error) => logger.error('delivery_worker_crashed', { request_id: 'worker-loop', correlation_id: 'worker-loop', error })), WORKER_INTERVAL_MS);
 
 app.listen(PORT, () => {
-  console.log(`Lead API listening on http://localhost:${PORT}`);
-  console.log(`DB: ${DB_PATH}`);
-  console.log(`Delivery worker interval: ${WORKER_INTERVAL_MS}ms`);
-  console.log(`Trust proxy: ${String(TRUST_PROXY)}`);
-  console.log(`CORS allowlist: ${CORS_ALLOWLIST.length ? CORS_ALLOWLIST.join(', ') : '(dev localhost defaults only)'}`);
-  console.log(`Captcha configured: ${captchaConfigured() ? 'yes' : 'no'} | fail_open=${CAPTCHA_FAIL_OPEN} | required_in_prod=${CAPTCHA_REQUIRED_IN_PROD}`);
+  logger.info('lead_api_started', {
+    request_id: 'startup',
+    correlation_id: 'startup',
+    port: PORT,
+    db_path: DB_PATH,
+    worker_interval_ms: WORKER_INTERVAL_MS,
+    trust_proxy: String(TRUST_PROXY),
+    cors_allowlist: CORS_ALLOWLIST.length ? CORS_ALLOWLIST : ['dev localhost defaults only'],
+    captcha_configured: captchaConfigured(),
+    captcha_fail_open: CAPTCHA_FAIL_OPEN,
+    captcha_required_in_prod: CAPTCHA_REQUIRED_IN_PROD,
+  });
   if (NODE_ENV === 'production' && !TRUST_PROXY) {
-    console.warn('Production note: TRUST_PROXY is disabled. Enable it when running behind a reverse proxy/load balancer for accurate client IP/proto handling.');
+    logger.warn('trust_proxy_disabled_in_production', { request_id: 'startup', correlation_id: 'startup' });
   }
 });

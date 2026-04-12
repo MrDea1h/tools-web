@@ -50,6 +50,9 @@ function maskKnownString(value, key = '') {
   if (lowerKey.includes('message') || lowerKey.includes('body') || lowerKey.includes('text')) return maskMessageSnippet(value);
 
   const s = String(value);
+  const mayContainSensitiveInline = !lowerKey || lowerKey.includes('error') || lowerKey.includes('reason') || lowerKey.includes('payload') || lowerKey.includes('event');
+  if (!mayContainSensitiveInline) return s;
+
   return s
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, (m) => maskEmail(m))
     .replace(/\b(?:\+?\d[\d\s().-]{5,}\d)\b/g, (m) => maskPhone(m))
