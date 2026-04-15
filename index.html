@@ -37,7 +37,7 @@
 
   /* HERO */
   .hero { height: 100vh; min-height: 700px; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 60px 80px; position: relative; overflow: hidden; background: var(--charcoal); }
-  .hero-bg { position: absolute; inset: 0; background: linear-gradient(160deg, rgba(18,18,16,0.55) 0%, rgba(18,18,16,0.88) 70%), url('4.jpg') center/cover no-repeat; transform: scale(1.05); transition: transform 8s ease-out; }
+  .hero-bg { position: absolute; inset: 0; background: linear-gradient(160deg, rgba(18,18,16,0.55) 0%, rgba(18,18,16,0.88) 70%), url('./NoBackground/3.png') center/cover no-repeat; transform: scale(1.05); transition: transform 8s ease-out; }
   .hero-bg.loaded { transform: scale(1); }
   .hero-noise { position: absolute; inset: 0; pointer-events: none; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); background-size: 200px; }
   .hero-label { font-family: var(--font-label); font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 28px; opacity: 0; transform: translateY(20px); animation: fadeUp 0.8s 0.3s forwards; }
@@ -232,11 +232,11 @@
     <a href="#catalog" class="btn-primary"><span data-i18n="about.browse">Browse catalog</span> <svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5H15M15 5L11 1M15 5L11 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></a>
   </div>
   <div class="about-right reveal-right">
-    <div class="about-main-img"><img src="5.jpg" alt="SmartPass door operator" loading="lazy"></div>
+    <div class="about-main-img"><img src="./NoBackground/4.png" alt="SmartPass door operator" loading="lazy"></div>
     <div class="about-strip">
-      <div class="about-strip-img"><img src="1.png" alt="Controller board" loading="lazy"></div>
-      <div class="about-strip-img"><img src="3.png" alt="Sliding mechanism" loading="lazy"></div>
-      <div class="about-strip-img"><img src="6.jpg" alt="Operator internals" loading="lazy"></div>
+      <div class="about-strip-img"><img src="./NoBackground/1.png" alt="Controller board" loading="lazy"></div>
+      <div class="about-strip-img"><img src="./NoBackground/2.png" alt="Sliding mechanism" loading="lazy"></div>
+      <div class="about-strip-img"><img src="./NoBackground/5.png" alt="Operator internals" loading="lazy"></div>
     </div>
   </div>
 </section>
