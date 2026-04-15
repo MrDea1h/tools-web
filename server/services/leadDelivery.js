@@ -26,8 +26,16 @@ export async function dispatchLeadDelivery(lead) {
     }
   }
 
+  const sentCount = results.filter((item) => item.status === 'sent').length;
+  const failedCount = results.filter((item) => item.status === 'failed').length;
+  const skippedCount = results.filter((item) => item.status === 'skipped').length;
+
   return {
-    ok: results.every((item) => item.status !== 'failed'),
+    ok: failedCount === 0 && sentCount > 0,
     results,
+    sentCount,
+    failedCount,
+    skippedCount,
+    reason: failedCount > 0 ? 'adapter_failed' : sentCount === 0 ? 'no_delivery_channel_sent' : undefined,
   };
 }

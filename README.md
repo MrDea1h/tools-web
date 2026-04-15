@@ -18,6 +18,9 @@ cp .env.example .env
 Defaults are safe for local development:
 - `PORT=8787`
 - `LEADS_DB_PATH=./data/leads.db`
+- `LEAD_WORKER_INTERVAL_MS=7000`
+- `LEAD_DELIVERY_MAX_ATTEMPTS=5`
+- `LEAD_PROCESSING_STALE_MS=300000`
 
 Optional integration envs:
 - `CRM_WEBHOOK_URL` - if set, lead payload is POSTed to this CRM webhook.
@@ -170,6 +173,8 @@ Still required before production launch:
 - On `POST /api/lead`, API **only stores + enqueues** (no direct CRM call in HTTP request).
 - Background worker (interval-based) picks due items from `lead_delivery_queue` and runs integrations via `server/services/leadDelivery.js`.
 - Worker retries failed deliveries with exponential backoff and capped attempts (`LEAD_DELIVERY_MAX_ATTEMPTS`).
+- Delivery is considered successful only if at least one adapter returns `sent` (`skipped` alone is not success).
+- Worker auto-recovers stale `processing` items older than `LEAD_PROCESSING_STALE_MS` by re-queueing them to `pending`.
 - `lead_events` stores audit events (`created`, `queued`, `processing_started`, `delivered_to_integrations`, `retry_scheduled`, `retry_exhausted`, `validation_failed`) with `request_id`.
 
 ## Lead delivery integrations scaffold
