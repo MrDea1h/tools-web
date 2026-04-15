@@ -15,6 +15,7 @@ const PORT = Number(process.env.PORT || 8787);
 const DB_PATH = process.env.LEADS_DB_PATH || path.join(__dirname, '..', 'data', 'leads.db');
 const WORKER_INTERVAL_MS = Number(process.env.LEAD_WORKER_INTERVAL_MS || 7000);
 const MAX_ATTEMPTS = Number(process.env.LEAD_DELIVERY_MAX_ATTEMPTS || 5);
+const PROCESSING_STALE_MS = Number(process.env.LEAD_PROCESSING_STALE_MS || 300000);
 
 function envBool(name, fallback = false) {
   const raw = process.env[name];
@@ -89,6 +90,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS lead_delivery_queue (
   external_id TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
+  processing_started_at TEXT,
   FOREIGN KEY (lead_id) REFERENCES leads(id)
 )`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_queue_due ON lead_delivery_queue(status, next_attempt_at)`);
@@ -124,6 +126,7 @@ ensureColumn('lead_delivery_queue', 'last_error', 'TEXT');
 ensureColumn('lead_delivery_queue', 'external_id', 'TEXT');
 ensureColumn('lead_delivery_queue', 'created_at', "TEXT NOT NULL DEFAULT (datetime('now'))");
 ensureColumn('lead_delivery_queue', 'updated_at', "TEXT NOT NULL DEFAULT (datetime('now'))");
+ensureColumn('lead_delivery_queue', 'processing_started_at', 'TEXT');
 ensureColumn('lead_events', 'request_id', 'TEXT');
 db.exec(`CREATE INDEX IF NOT EXISTS idx_lead_events_request_id ON lead_events(request_id)`);
 
@@ -442,24 +445,62 @@ async function runDeliveryWorkerTick() {
   if (workerBusy) return;
   workerBusy = true;
   try {
-    const item = db.prepare(`
-      SELECT q.id AS queue_id, q.lead_id, q.attempts,
-             l.name, l.email, l.phone, l.company, l.message, l.product, l.utm, l.source_url, l.lang, l.schema_version,
-             l.ip, l.user_agent, l.created_at
-      FROM lead_delivery_queue q
-      JOIN leads l ON l.id = q.lead_id
-      WHERE q.status IN ('pending', 'failed') AND q.next_attempt_at <= ?
-      ORDER BY q.next_attempt_at ASC, q.id ASC
-      LIMIT 1
-    `).get(new Date().toISOString());
-    if (!item) return;
-
     const now = new Date().toISOString();
+    const staleBefore = new Date(Date.now() - PROCESSING_STALE_MS).toISOString();
+
+    let item = null;
+    let claimed = false;
+
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const staleRequeued = db.prepare(
+        `UPDATE lead_delivery_queue
+         SET status='pending', updated_at=?, processing_started_at=NULL
+         WHERE status='processing' AND processing_started_at IS NOT NULL AND processing_started_at <= ?`
+      ).run(now, staleBefore);
+
+      if ((staleRequeued?.changes || 0) > 0) {
+        logger.warn('worker_stale_processing_requeued', {
+          request_id: 'worker-loop',
+          correlation_id: 'worker-loop',
+          requeued: staleRequeued.changes,
+          stale_before: staleBefore,
+        });
+      }
+
+      item = db.prepare(
+        `SELECT q.id AS queue_id, q.lead_id, q.attempts,
+                l.name, l.email, l.phone, l.company, l.message, l.product, l.utm, l.source_url, l.lang, l.schema_version,
+                l.ip, l.user_agent, l.created_at
+         FROM lead_delivery_queue q
+         JOIN leads l ON l.id = q.lead_id
+         WHERE q.status IN ('pending', 'failed')
+           AND q.next_attempt_at <= ?
+         ORDER BY q.next_attempt_at ASC, q.id ASC
+         LIMIT 1`
+      ).get(now);
+
+      if (item) {
+        const claim = db.prepare(
+          `UPDATE lead_delivery_queue
+           SET status='processing', updated_at=?, processing_started_at=?
+           WHERE id=? AND status IN ('pending','failed')`
+        ).run(now, now, item.queue_id);
+        claimed = (claim?.changes || 0) === 1;
+      }
+
+      db.exec('COMMIT');
+    } catch (txErr) {
+      db.exec('ROLLBACK');
+      throw txErr;
+    }
+
+    if (!item || !claimed) return;
+
     const workerReqId = `worker-${randomUUID()}`;
     const workerLog = logger.child({ request_id: workerReqId, correlation_id: workerReqId, worker: 'lead_delivery', queue_id: item.queue_id, lead_id: item.lead_id });
     workerLog.info('worker_processing_started', { attempts_so_far: item.attempts, lead: item });
 
-    db.prepare(`UPDATE lead_delivery_queue SET status='processing', updated_at=? WHERE id=?`).run(now, item.queue_id);
     addLeadEvent({ leadId: item.lead_id, eventType: 'processing_started', payload: { queue_id: item.queue_id }, requestId: workerReqId });
 
     const delivery = await dispatchLeadDelivery({
@@ -473,22 +514,25 @@ async function runDeliveryWorkerTick() {
     const externalId = crmResult?.external_id || crmResult?.externalId || null;
 
     if (delivery.ok) {
-      db.prepare(`UPDATE lead_delivery_queue SET status='delivered', attempts=?, last_error=NULL, external_id=COALESCE(?, external_id), updated_at=? WHERE id=?`).run(attempts, externalId, now, item.queue_id);
+      db.prepare(`UPDATE lead_delivery_queue SET status='delivered', attempts=?, last_error=NULL, external_id=COALESCE(?, external_id), processing_started_at=NULL, updated_at=? WHERE id=?`).run(attempts, externalId, now, item.queue_id);
       db.prepare(`UPDATE leads SET status=?, external_id=COALESCE(?, external_id) WHERE id=?`).run(LEAD_STATUS.DELIVERED, externalId, item.lead_id);
-      addLeadEvent({ leadId: item.lead_id, eventType: 'delivered_to_integrations', payload: { attempts, results: delivery.results }, requestId: workerReqId });
-      workerLog.info('worker_delivery_success', { attempts, results: delivery.results, external_id: externalId });
+      addLeadEvent({ leadId: item.lead_id, eventType: 'delivered_to_integrations', payload: { attempts, results: delivery.results, sent_count: delivery.sentCount }, requestId: workerReqId });
+      workerLog.info('worker_delivery_success', { attempts, results: delivery.results, external_id: externalId, sent_count: delivery.sentCount });
     } else {
       const nextAttemptAt = nextBackoffIso(attempts);
-      const errorText = delivery.results.filter((r) => r.status === 'failed').map((r) => `${r.adapter}: ${r.reason}`).join(' | ') || 'delivery_failed';
+      const failedReasons = delivery.results.filter((r) => r.status === 'failed').map((r) => `${r.adapter}: ${r.reason}`);
+      const errorText = failedReasons.join(' | ') || delivery.reason || 'no_delivery_channel_sent';
       const queueStatus = attempts >= MAX_ATTEMPTS ? QUEUE_STATUS.FAILED : QUEUE_STATUS.PENDING;
-      db.prepare(`UPDATE lead_delivery_queue SET status=?, attempts=?, last_error=?, next_attempt_at=?, updated_at=? WHERE id=?`).run(queueStatus, attempts, maskPII(errorText).slice(0, 2000), nextAttemptAt, now, item.queue_id);
+      db.prepare(`UPDATE lead_delivery_queue SET status=?, attempts=?, last_error=?, next_attempt_at=?, processing_started_at=NULL, updated_at=? WHERE id=?`).run(queueStatus, attempts, maskPII(errorText).slice(0, 2000), nextAttemptAt, now, item.queue_id);
       db.prepare(`UPDATE leads SET status=? WHERE id=?`).run(LEAD_STATUS.FAILED, item.lead_id);
-      addLeadEvent({ leadId: item.lead_id, eventType: attempts >= MAX_ATTEMPTS ? 'retry_exhausted' : 'retry_scheduled', payload: { attempts, next_attempt_at: nextAttemptAt, error: maskPII(errorText) }, requestId: workerReqId });
+      addLeadEvent({ leadId: item.lead_id, eventType: attempts >= MAX_ATTEMPTS ? 'retry_exhausted' : 'retry_scheduled', payload: { attempts, next_attempt_at: nextAttemptAt, error: maskPII(errorText), sent_count: delivery.sentCount }, requestId: workerReqId });
       workerLog.warn(attempts >= MAX_ATTEMPTS ? 'worker_retry_exhausted' : 'worker_retry_scheduled', {
         attempts,
         next_attempt_at: nextAttemptAt,
         queue_status: queueStatus,
         failed_results: delivery.results.filter((r) => r.status === 'failed'),
+        sent_count: delivery.sentCount,
+        reason: delivery.reason,
       });
     }
   } catch (error) {
